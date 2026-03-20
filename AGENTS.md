@@ -62,8 +62,39 @@ A clean build is the definition of "passing." Run this before every commit touch
 
 - Target branch: `master` on `bazley82/OpenEmuARM64` (upstream)
 - PR title format: `fix: description` / `feat: description` / `chore: description`
-- Include what was broken, what was changed, and how to verify it
+- **Use the PR template** — `.github/PULL_REQUEST_TEMPLATE.md` auto-populates when you open a PR on GitHub. Fill every section; don't delete the checklist.
+- Each PR should address one issue or one logical change — don't bundle unrelated fixes
 - For core-specific fixes, note which systems are affected and whether you tested with a ROM
+- Reference the upstream issue with `Fixes #N` (auto-closes on merge) or `Related to #N` (soft link)
+- You cannot apply labels to the upstream repo directly — suggest the appropriate label in your PR description or a comment; the maintainer applies it
+
+**If your fix commit is on `master` mixed with other commits, cherry-pick it onto a clean branch:**
+```bash
+git checkout <last-upstream-commit-sha> -b fix/your-description
+git cherry-pick <fix-commit-sha>
+git push -u origin fix/your-description
+gh pr create --repo bazley82/OpenEmuARM64 --head chris-p-bacon-sudo:fix/your-description --base master
+```
+
+---
+
+## Issue Tracker
+
+**Do not mirror upstream issues** into `chris-p-bacon-sudo/OpenEmuARM64`. They already exist at `bazley82/OpenEmuARM64/issues` and duplicating them creates maintenance overhead.
+
+**Your fork's issue tracker is for personal working notes only:**
+- Things you notice while testing that aren't ready to share upstream
+- Ideas to revisit later
+- Questions to answer before opening a PR
+
+```bash
+# Log a personal working note
+gh issue create --repo chris-p-bacon-sudo/OpenEmuARM64 \
+  --title "note: ..." \
+  --body "..."
+```
+
+**When ready to surface something upstream**, file a new issue at `bazley82/OpenEmuARM64/issues` — don't just convert your fork note.
 
 ---
 
@@ -104,20 +135,35 @@ The main app is **BSD 2-Clause**. Emulator cores are mostly **GPL v2**. Key rule
 # Open in Xcode
 open OpenEmu-metal.xcworkspace
 
-# Check current branch
-git branch
-
-# Sync with upstream
+# --- Start of every new piece of work ---
+git checkout master
 git fetch upstream && git merge upstream/master
+git push origin master                        # keep fork in sync
 
 # Create a feature branch
 git checkout -b fix/your-description
 
 # Stage and commit
-git add -p   # review changes interactively
-git commit -m "fix: description of what was fixed"
+git add -p                                    # review changes interactively
+git commit -m "fix: description"
 
-# Push and open PR
+# Push and open PR against upstream
 git push -u origin fix/your-description
-gh pr create --repo bazley82/OpenEmuARM64
+gh pr create --repo bazley82/OpenEmuARM64 \
+  --head chris-p-bacon-sudo:fix/your-description \
+  --base master
+
+# --- After PR is merged upstream ---
+git checkout master
+git fetch upstream && git merge upstream/master
+git push origin master
+git branch -d fix/your-description
+git push origin --delete fix/your-description
+
+# Log a personal working note on your fork
+gh issue create --repo chris-p-bacon-sudo/OpenEmuARM64 \
+  --title "note: ..." --body "..."
+
+# Check upstream open issues
+gh issue list --repo bazley82/OpenEmuARM64
 ```
