@@ -82,7 +82,12 @@ final class SidebarController: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
+        // Lock in the dark charcoal sidebar background regardless of OS version
+        sidebarView.backgroundColor = NSColor(white: 0.13, alpha: 1)
+        sidebarView.enclosingScrollView?.backgroundColor = NSColor(white: 0.13, alpha: 1)
+        sidebarView.enclosingScrollView?.drawsBackground = true
+
         sidebarView.registerForDraggedTypes([.fileURL, .game])
         sidebarView.expandItem(nil, expandChildren: true)
         

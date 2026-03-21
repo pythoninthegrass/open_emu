@@ -133,6 +133,7 @@ final class LibraryToolbarDelegate: NSObject, NSToolbarDelegate {
                       NSImage(named: NSImage.listViewTemplateName)!]
         
         let segmControl = NSSegmentedControl(images: images, trackingMode: .selectOne, target: toolbarOwner, action: #selector(LibraryController.switchToView(_:)))
+        segmControl.segmentStyle = .texturedRounded
         segmControl.setToolTip(NSLocalizedString("Switch To Grid View", comment: "Toolbar, tooltip"), forSegment: 0)
         segmControl.setToolTip(NSLocalizedString("Switch To List View", comment: "Toolbar, tooltip"), forSegment: 1)
         segmControl.setWidth(26, forSegment: 0)
@@ -177,6 +178,7 @@ final class LibraryToolbarDelegate: NSObject, NSToolbarDelegate {
                       NSLocalizedString("Toolbar: Homebrew", value: "Homebrew", comment: "toolbar, category label")]
         
         let segmControl = NSSegmentedControl(labels: titles, trackingMode: .selectOne, target: toolbarOwner, action: #selector(LibraryController.switchCategory(_:)))
+        segmControl.segmentStyle = .texturedRounded
         
         let item = NSToolbarItem(itemIdentifier: .oeCategory)
         item.view = segmControl

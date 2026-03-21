@@ -167,6 +167,8 @@ final class MainWindowController: NSWindowController {
         window?.restorationClass = type(of: self)
         window?.titlebarAppearsTransparent = true
         window?.styleMask.insert(.fullSizeContentView)
+        // Lock in the dark content-area background regardless of OS version
+        window?.backgroundColor = NSColor(white: 0.15, alpha: 1)
 
         assert(window?.identifier == .mainWindow, "Main library window identifier does not match between nib and code")
     }
