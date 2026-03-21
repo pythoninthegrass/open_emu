@@ -44,7 +44,7 @@ enum OEAppearance {
     }
     
     static var hudBar: HUDBar {
-        HUDBar(rawValue: UserDefaults.standard.integer(forKey: HUDBar.key)) ?? .vibrant
+        HUDBar(rawValue: UserDefaults.standard.integer(forKey: HUDBar.key)) ?? .dark
     }
     
     static var controlsPrefs: ControlsPrefs {
