@@ -80,7 +80,7 @@ Get the latest build from the **[Releases](https://github.com/chris-p-bacon-sudo
 
 OpenEmu is one of the best pieces of Mac software ever made — a beautifully designed, first-class game emulation frontend that brought together dozens of emulation cores under a single native macOS UI. The original project went quiet around 2022.
 
-This fork started from [bazley82's OpenEmuARM64](https://github.com/bazley82/OpenEmuARM64), which did the foundational work of porting all 25 cores to build natively on Apple Silicon. When that repo also went quiet, independent development continued here — fixing macOS 26 compatibility issues, hardening the build, and setting up community infrastructure to keep the project alive.
+This fork started from [bazley82's OpenEmuARM64](https://github.com/bazley82/OpenEmuARM64), which did the foundational work of porting all 25 cores to build natively on Apple Silicon. I've continued to work in my own build for fun and to get soemthing working for myself and others that i'm happy with — fixing macOS 26 compatibility issues, hardening the build, and setting up community infrastructure to keep the project alive. I've also tried to preserve as much of the original build that made it great while getting it working on newer MacOS and Swift versions.
 
 **Lineage:**
 - [OpenEmu/OpenEmu](https://github.com/OpenEmu/OpenEmu) — the original project, built by the OpenEmu team
