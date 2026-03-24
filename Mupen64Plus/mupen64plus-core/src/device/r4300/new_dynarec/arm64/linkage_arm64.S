@@ -20,21 +20,13 @@
 
 #ifdef LEADING_UNDERSCORE
 
-#define GLOBAL_FUNCTION(name)  \
-	.globl _##name;            \
-	.type _##name, %function;  \
-	_##name
-
-#define LOCAL_FUNCTION(name)  \
-	.type _##name, %function; \
-	_##name
-
-#define GLOBAL_VARIABLE(name, size_) \
-	.global _##name;                 \
-	.type   _##name, %object;        \
-	.size   _##name, size_
-
-#define EXTERN_SYMBOL(name) _##name
+/* macOS/Mach-O: semicolons are NOT statement separators, so .globl must be on
+   its own line.  We emit all .globl declarations as a preamble (see below) and
+   the macro simply drops a colon-terminated label at the call site. */
+#define GLOBAL_FUNCTION(name)        _##name
+#define LOCAL_FUNCTION(name)         _##name
+#define GLOBAL_VARIABLE(name, size_) _##name
+#define EXTERN_SYMBOL(name)          _##name
 
 #else
 
@@ -96,7 +88,50 @@ fp_restore_candidate   = offsetof_struct_new_dynarec_hot_state_restore_candidate
 fp_memory_map          = offsetof_struct_new_dynarec_hot_state_memory_map
 
 TEXT_SECTION
-    
+
+#ifdef __APPLE__
+/* macOS requires .globl on its own line — emit all exports as a preamble */
+.globl _breakpoint
+.globl _cc_interrupt
+.globl _do_interrupt
+.globl _fp_exception
+.globl _fp_exception_ds
+.globl _jump_eret
+.globl _jump_syscall
+.globl _jump_vaddr
+.globl _jump_vaddr_x0
+.globl _jump_vaddr_x1
+.globl _jump_vaddr_x2
+.globl _jump_vaddr_x3
+.globl _jump_vaddr_x4
+.globl _jump_vaddr_x5
+.globl _jump_vaddr_x6
+.globl _jump_vaddr_x7
+.globl _jump_vaddr_x8
+.globl _jump_vaddr_x9
+.globl _jump_vaddr_x10
+.globl _jump_vaddr_x11
+.globl _jump_vaddr_x12
+.globl _jump_vaddr_x13
+.globl _jump_vaddr_x14
+.globl _jump_vaddr_x15
+.globl _jump_vaddr_x16
+.globl _jump_vaddr_x17
+.globl _jump_vaddr_x18
+.globl _jump_vaddr_x19
+.globl _jump_vaddr_x20
+.globl _jump_vaddr_x21
+.globl _jump_vaddr_x22
+.globl _jump_vaddr_x23
+.globl _jump_vaddr_x24
+.globl _jump_vaddr_x25
+.globl _jump_vaddr_x26
+.globl _jump_vaddr_x27
+.globl _jump_vaddr_x28
+.globl _new_dyna_start
+.globl _verify_code
+#endif /* __APPLE__ */
+
 GLOBAL_FUNCTION(jump_vaddr_x0):
     b      EXTERN_SYMBOL(jump_vaddr)
     
@@ -367,12 +402,22 @@ GLOBAL_FUNCTION(jump_eret):
     b      .E8
     
 GLOBAL_FUNCTION(new_dyna_start):
+#ifdef __APPLE__
+    adrp   x16, EXTERN_SYMBOL(g_dev)@GOTPAGE
+    ldr    x16, [x16, EXTERN_SYMBOL(g_dev)@GOTPAGEOFF]
+#else
     adrp   x16, EXTERN_SYMBOL(g_dev)
     add    x16, x16, :lo12:EXTERN_SYMBOL(g_dev)
+#endif
     movl   x1, (device_r4300_new_dynarec_hot_state_dynarec_local + saved_context)
     add    x16, x16, x1
+#ifdef __APPLE__
+    adrp   x1, EXTERN_SYMBOL(base_addr_rx)@GOTPAGE
+    ldr    x1, [x1, EXTERN_SYMBOL(base_addr_rx)@GOTPAGEOFF]
+#else
     adrp   x1, EXTERN_SYMBOL(base_addr_rx)
     add    x1, x1, :lo12:EXTERN_SYMBOL(base_addr_rx)
+#endif
     mov    w0, #0xa4000000
     stp    x19,x20,[x16,#0]
     stp    x21,x22,[x16,#16]
