@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -929,7 +929,7 @@
 		8784175B25994FEF002ED39D /* arm_cpu_features.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = arm_cpu_features.c; sourceTree = "<group>"; };
 		8784175D25994FEF002ED39D /* assem_arm64.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = assem_arm64.h; sourceTree = "<group>"; };
 		8784175E25994FEF002ED39D /* linkage_arm64.S */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = linkage_arm64.S; sourceTree = "<group>"; };
-		8784175F25994FEF002ED39D /* assem_arm64.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = assem_arm64.c; sourceTree = "<group>"; };
+		FCB24781096647F2B503592C12C8D2DD /* assem_arm64.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = assem_arm64.c; sourceTree = "<group>"; };
 		8784176025994FEF002ED39D /* cp1.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = cp1.c; sourceTree = "<group>"; };
 		8784176125994FEF002ED39D /* interrupt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = interrupt.h; sourceTree = "<group>"; };
 		8784176225994FEF002ED39D /* tlb.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = tlb.c; sourceTree = "<group>"; };
@@ -2448,7 +2448,7 @@
 		8784175C25994FEF002ED39D /* arm64 */ = {
 			isa = PBXGroup;
 			children = (
-				8784175F25994FEF002ED39D /* assem_arm64.c */,
+				FCB24781096647F2B503592C12C8D2DD /* assem_arm64.c */,
 				8784175D25994FEF002ED39D /* assem_arm64.h */,
 				8784175E25994FEF002ED39D /* linkage_arm64.S */,
 			);
@@ -3382,6 +3382,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+					"LEADING_UNDERSCORE=1",
 				);
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
 					"$(inherited)",
@@ -3440,6 +3441,10 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREFIX_HEADER = Mupen64Plus_Prefix.pch;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"LEADING_UNDERSCORE=1",
+				);
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
 					"$(inherited)",
 					"NEW_DYNAREC=NEW_DYNAREC_ARM64",
@@ -3647,7 +3652,7 @@
 				EXECUTABLE_EXTENSION = so;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../DerivedData/OpenEmu/Build/Products/Release\"",
+					"$(BUILT_PRODUCTS_DIR)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -3694,7 +3699,7 @@
 				EXECUTABLE_EXTENSION = so;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../DerivedData/OpenEmu/Build/Products/Release\"",
+					"$(BUILT_PRODUCTS_DIR)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -3741,7 +3746,7 @@
 				EXECUTABLE_EXTENSION = so;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../DerivedData/OpenEmu/Build/Products/Release\"",
+					"$(BUILT_PRODUCTS_DIR)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -3785,7 +3790,7 @@
 				EXECUTABLE_EXTENSION = so;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../DerivedData/OpenEmu/Build/Products/Release\"",
+					"$(BUILT_PRODUCTS_DIR)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
