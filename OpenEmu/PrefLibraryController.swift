@@ -47,7 +47,6 @@ final class PrefLibraryController: NSViewController {
         librariesView.removeFromSuperview()
         librariesView = scrollView
         
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.borderType = .bezelBorder
         NSLayoutConstraint.activate([
             scrollView.widthAnchor.constraint(equalToConstant: size.width),
