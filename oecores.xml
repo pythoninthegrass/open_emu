@@ -110,7 +110,7 @@
       - Compile MAME (modern versions support ARM64/AArch64 natively)
       - Register here under openemu.system.arcade
 
-    Tracking issue: https://github.com/chris-p-bacon-sudo/openemu-silicon/issues/25
+    Tracking issue: https://github.com/nickybmon/openemu-silicon/issues/25
   -->
 
   <!-- ✅ ARM64 native — locally built, no public appcast yet -->

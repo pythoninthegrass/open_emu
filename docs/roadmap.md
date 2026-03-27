@@ -123,7 +123,7 @@ Phase 3 is divided into sub-phases. **3a (compiles, doesn't crash) is the goal f
 
 #### Steps
 
-1. **Fork `duckey77/Dolphin-Core`** into `chris-p-bacon-sudo/Dolphin-Core`.
+1. **Fork `duckey77/Dolphin-Core`** into `nickybmon/Dolphin-Core`.
 2. **Add `Dolphin/` as a local mirror.** Point the submodule at your fork so you control the integration branch.
 3. **Update Dolphin submodule** to a recent stable tag. Use a tagged release, not a commit hash.
 4. **Apply standard ARM64/macOS fixes** (framework paths, workspace entry, scheme).

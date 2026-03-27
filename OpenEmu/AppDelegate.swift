@@ -43,7 +43,7 @@ class AppDelegate: NSObject {
     static let userGuideAddress = "https://github.com/OpenEmu/OpenEmu/wiki/User-guide"
     static let releaseNotesAddress = "https://github.com/OpenEmu/OpenEmu/wiki/Release-notes"
     static let feedbackAddress = "https://github.com/OpenEmu/OpenEmu/issues"
-    static let bugReportAddress = "https://github.com/chris-p-bacon-sudo/OpenEmu-Silicon/issues/new"
+    static let bugReportAddress = "https://github.com/nickybmon/OpenEmu-Silicon/issues/new"
 
     @IBOutlet weak var fileMenu: NSMenu!
     @IBOutlet weak var helpMenu: NSMenu!

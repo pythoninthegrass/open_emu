@@ -26,7 +26,7 @@ The foundational work of porting all emulation cores to build natively on Apple 
 
 Continued development, macOS compatibility updates, and community infrastructure for this repository.
 
-- **chris-p-bacon-sudo** — https://github.com/chris-p-bacon-sudo
+- **nickybmon** — https://github.com/nickybmon
 
 ---
 

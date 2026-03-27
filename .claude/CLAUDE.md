@@ -8,7 +8,7 @@ This file is read at the start of every Claude Code session for this project. Fo
 
 **OpenEmu-Silicon** is a native Apple Silicon port of [OpenEmu](https://openemu.org), the beloved macOS multi-system emulator. It was originally derived from `bazley82/OpenEmuARM64`, which did the foundational work of porting all 25 emulation cores to ARM64. This project has since diverged into its own independent line of development.
 
-**This repo:** `chris-p-bacon-sudo/OpenEmu-Silicon` (primary, standalone)
+**This repo:** `nickybmon/OpenEmu-Silicon` (primary, standalone)
 **Primary workspace:** `OpenEmu-metal.xcworkspace` (Metal renderer — use this, not the legacy `.xcworkspace`)
 
 **Lineage note:** Built on `bazley82/OpenEmuARM64` (Metal renderer, macOS 26 fixes) over `Azyzraissi/OpenEmu` (OpenGL, no UI changes). This project has diverged and is independently maintained.
@@ -110,7 +110,7 @@ Fixes #N"
 
 # 4. Push AND open a PR in the same step — never one without the other
 git push -u origin fix/your-description
-gh pr create --repo chris-p-bacon-sudo/OpenEmu-Silicon \
+gh pr create --repo nickybmon/OpenEmu-Silicon \
   --base main \
   --title "fix: your-description" \
   --body "..."
@@ -187,10 +187,10 @@ Always test PRs locally before merging. The standard flow:
 
 ```bash
 # Preferred — gh looks up the branch name for you
-gh pr checkout <PR_NUMBER> --repo chris-p-bacon-sudo/OpenEmu-Silicon
+gh pr checkout <PR_NUMBER> --repo nickybmon/OpenEmu-Silicon
 
 # Example
-gh pr checkout 54 --repo chris-p-bacon-sudo/OpenEmu-Silicon
+gh pr checkout 54 --repo nickybmon/OpenEmu-Silicon
 ```
 
 This fetches the branch if needed and checks it out. `git branch` will confirm you're on it.
@@ -270,7 +270,7 @@ the previously installed (stale) core binary regardless of what was just built.
 
 ## Project Board
 
-**OpenEmu-Silicon Project** — https://github.com/users/chris-p-bacon-sudo/projects/3
+**OpenEmu-Silicon Project** — https://github.com/users/nickybmon/projects/3
 
 Tracks the seven major open work items. Status rules:
 - When starting work on a board item → set status to `In Progress`
@@ -284,13 +284,13 @@ gh project item-edit --id <PVTI_...> --project-id PVT_kwHODZJ49M4BSxR1 \
 # Option IDs: Todo=f75ad846  In Progress=47fc9ee4  Done=98236657
 ```
 
-To get item IDs: `gh project item-list 3 --owner chris-p-bacon-sudo --format json`
+To get item IDs: `gh project item-list 3 --owner nickybmon --format json`
 
 ---
 
 ## Issue Tracker Usage
 
-**Primary tracker** (`chris-p-bacon-sudo/OpenEmu-Silicon/issues`) — the project's main issue tracker for bugs, build fixes, core integration work, feature requests, and release checklists.
+**Primary tracker** (`nickybmon/OpenEmu-Silicon/issues`) — the project's main issue tracker for bugs, build fixes, core integration work, feature requests, and release checklists.
 
 **Issue templates** (`.github/ISSUE_TEMPLATE/`):
 
@@ -316,7 +316,7 @@ These rules exist because previous AI-assisted sessions created messy, duplicate
 
 ### Before opening an issue
 
-1. **Search first.** Run `gh issue list --repo chris-p-bacon-sudo/OpenEmu-Silicon --state open` and check if the problem is already tracked. If it is, add a comment — do not open a duplicate.
+1. **Search first.** Run `gh issue list --repo nickybmon/OpenEmu-Silicon --state open` and check if the problem is already tracked. If it is, add a comment — do not open a duplicate.
 2. **One issue per concern.** If two cores have the same root cause and fix, open one issue covering both. Do not open one issue per core.
 3. **Only one checklist per milestone.** If a release checklist is already open, update it — never open a second one.
 
@@ -328,7 +328,7 @@ These rules exist because previous AI-assisted sessions created messy, duplicate
 
 ### Closing issues
 
-- **Close resolved issues immediately.** The moment a fix is committed, close the issue with `gh issue close #N --repo chris-p-bacon-sudo/OpenEmu-Silicon --comment "Resolved in commit <sha>. <one line summary>."` — do not leave it open for a later cleanup pass.
+- **Close resolved issues immediately.** The moment a fix is committed, close the issue with `gh issue close #N --repo nickybmon/OpenEmu-Silicon --comment "Resolved in commit <sha>. <one line summary>."` — do not leave it open for a later cleanup pass.
 - **Use closing keywords in commit messages.** Every commit that resolves an issue must include `Fixes #N` or `Closes #N` in the commit body (not just the subject line):
   ```
   fix: add Mupen64Plus to workspace and fix ARM64 dynarec build
@@ -405,10 +405,10 @@ Do not rely on a static snapshot in this file. At the start of any work session,
 
 ```bash
 # Open issues
-gh issue list --repo chris-p-bacon-sudo/OpenEmu-Silicon --state open
+gh issue list --repo nickybmon/OpenEmu-Silicon --state open
 
 # Project board
-gh project item-list 3 --owner chris-p-bacon-sudo --format json
+gh project item-list 3 --owner nickybmon --format json
 ```
 
 Read the output before deciding what to work on. The board and issue tracker are the source of truth — this file is not.

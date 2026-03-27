@@ -22,7 +22,7 @@ This is a community-maintained fork of OpenEmu, rebuilt to run natively on M-ser
 
 ## Download
 
-Get the latest build from the **[Releases](https://github.com/chris-p-bacon-sudo/OpenEmu-Silicon/releases)** page.
+Get the latest build from the **[Releases](https://github.com/nickybmon/OpenEmu-Silicon/releases)** page.
 
 ---
 
@@ -116,7 +116,7 @@ This fork started from [bazley82's OpenEmuARM64](https://github.com/bazley82/Ope
 **Lineage:**
 - [OpenEmu/OpenEmu](https://github.com/OpenEmu/OpenEmu) — the original project, built by the OpenEmu team
 - [bazley82/OpenEmuARM64](https://github.com/bazley82/OpenEmuARM64) — the ARM64 port that this fork is built on
-- **This repo** — continued development and maintenance by [@chris-p-bacon-sudo](https://github.com/chris-p-bacon-sudo)
+- **This repo** — continued development and maintenance by [@nickybmon](https://github.com/nickybmon)
 
 ---
 
