@@ -848,6 +848,22 @@
 		DD22002ADD22002ADD22002A /* AesDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DD220029DD220029DD220029 /* AesDevice.cpp */; };
 		DD22002CDD22002CDD22002C /* Sha.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DD22002BDD22002BDD22002B /* Sha.cpp */; };
 		DD22002EDD22002EDD22002E /* WC24PatchEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DD22002DDD22002DDD22002D /* WC24PatchEngine.cpp */; };
+		EE330002EE330002EE330002 /* TAPServerModem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330001EE330001EE330001 /* TAPServerModem.cpp */; };
+		EE330004EE330004EE330004 /* HSP_Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330003EE330003EE330003 /* HSP_Device.cpp */; };
+		EE330006EE330006EE330006 /* VFFUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330005EE330005EE330005 /* VFFUtil.cpp */; };
+		EE330008EE330008EE330008 /* Infinity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330007EE330007EE330007 /* Infinity.cpp */; };
+		EE33000AEE33000AEE33000A /* Skylander.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330009EE330009EE330009 /* Skylander.cpp */; };
+		EE33000CEE33000CEE33000C /* WiiSpeak.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE33000BEE33000BEE33000B /* WiiSpeak.cpp */; };
+		EE33000EEE33000EEE33000E /* LogitechMic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE33000DEE33000DEE33000D /* LogitechMic.cpp */; };
+		EE330010EE330010EE330010 /* ConstantPropagation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE33000FEE33000FEE33000F /* ConstantPropagation.cpp */; };
+		EE330012EE330012EE330012 /* MagneticCardReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330011EE330011EE330011 /* MagneticCardReader.cpp */; };
+		EE330014EE330014EE330014 /* C1231BR.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330013EE330013EE330013 /* C1231BR.cpp */; };
+		EE330016EE330016EE330016 /* C1231LR.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330015EE330015EE330015 /* C1231LR.cpp */; };
+		EE330017EE330017EE330017 /* libvideometal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5574741C2F64AEBB00F240F0 /* libvideometal.a */; };
+		EE33001BEE33001BEE33001B /* HSP_DeviceARAMExpansion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE33001AEE33001AEE33001A /* HSP_DeviceARAMExpansion.cpp */; };
+		EE33001DEE33001DEE33001D /* HSP_DeviceNull.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE33001CEE33001CEE33001C /* HSP_DeviceNull.cpp */; };
+		EE33001FEE33001FEE33001F /* Microphone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE33001EEE33001EEE33001E /* Microphone.cpp */; };
+		EE330021EE330021EE330021 /* SkylanderFigure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE330020EE330020EE330020 /* SkylanderFigure.cpp */; };
 		558C1ACD2F62A10200E8C92B /* x509asn1.c in Sources */ = {isa = PBXBuildFile; fileRef = 558C1ACC2F62A10200E8C92B /* x509asn1.c */; };
 		558C1ACE2F62A10200E8C92B /* vtls_spack.c in Sources */ = {isa = PBXBuildFile; fileRef = 558C1AC82F62A10200E8C92B /* vtls_spack.c */; };
 		558C1ACF2F62A10200E8C92B /* mbedtls_threadlock.c in Sources */ = {isa = PBXBuildFile; fileRef = 558C1ABF2F62A10200E8C92B /* mbedtls_threadlock.c */; };
@@ -1320,6 +1336,16 @@
 		EEF4EEEF224AAFB50077748D /* propagateNoContraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF4EE9B224AAE650077748D /* propagateNoContraction.cpp */; };
 		EEF4EEF0224AAFB50077748D /* Scan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF4EE9F224AAE650077748D /* Scan.cpp */; };
 		EEF4EEF1224AAFB50077748D /* Initialize.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF4EEA2224AAE650077748D /* Initialize.cpp */; };
+		FF110002FF110002FF110002 /* SpirvIntrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF110001FF110001FF110001 /* SpirvIntrinsics.cpp */; };
+		FF220002FF220002FF220002 /* spirv_cross.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF220001FF220001FF220001 /* spirv_cross.cpp */; };
+		FF220004FF220004FF220004 /* spirv_cross_parsed_ir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF220003FF220003FF220003 /* spirv_cross_parsed_ir.cpp */; };
+		FF220006FF220006FF220006 /* spirv_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF220005FF220005FF220005 /* spirv_parser.cpp */; };
+		FF220008FF220008FF220008 /* spirv_cfg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF220007FF220007FF220007 /* spirv_cfg.cpp */; };
+		FF22000AFF22000AFF22000A /* spirv_glsl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF220009FF220009FF220009 /* spirv_glsl.cpp */; };
+		FF22000CFF22000CFF22000C /* spirv_msl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF22000BFF22000BFF22000B /* spirv_msl.cpp */; };
+		FF22000EFF22000EFF22000E /* spirv_cross_util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF22000DFF22000DFF22000D /* spirv_cross_util.cpp */; };
+		FF330003FF330003FF330003 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF330001FF330001FF330001 /* Metal.framework */; };
+		FF330004FF330004FF330004 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF330002FF330002FF330002 /* QuartzCore.framework */; };
 		EEF4EEF2224AAFB50077748D /* glslang_tab.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF4EEA3224AAE650077748D /* glslang_tab.cpp */; };
 		EEF4EEF3224AAFB50077748D /* limits.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF4EEA4224AAE650077748D /* limits.cpp */; };
 		EEF4EEF4224AAFB50077748D /* parseConst.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF4EEA5224AAE650077748D /* parseConst.cpp */; };
@@ -1589,6 +1615,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 557473DC2F64AA7B00F240F0;
 			remoteInfo = FatFs;
+		};
+		EE330018EE330018EE330018 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8AE37EB7920C4C86939DE6E9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 557474082F64AEBB00F240F0;
+			remoteInfo = videometal;
 		};
 		8355D4B61A65392600E73302 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -3232,6 +3265,21 @@
 		DD220029DD220029DD220029 /* AesDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AesDevice.cpp; path = dolphin/Source/Core/Core/IOS/Crypto/AesDevice.cpp; sourceTree = SOURCE_ROOT; };
 		DD22002BDD22002BDD22002B /* Sha.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Sha.cpp; path = dolphin/Source/Core/Core/IOS/Crypto/Sha.cpp; sourceTree = SOURCE_ROOT; };
 		DD22002DDD22002DDD22002D /* WC24PatchEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WC24PatchEngine.cpp; path = dolphin/Source/Core/Core/WC24PatchEngine.cpp; sourceTree = SOURCE_ROOT; };
+		EE330001EE330001EE330001 /* TAPServerModem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TAPServerModem.cpp; path = dolphin/Source/Core/Core/HW/EXI/Modem/TAPServerModem.cpp; sourceTree = SOURCE_ROOT; };
+		EE330003EE330003EE330003 /* HSP_Device.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HSP_Device.cpp; path = dolphin/Source/Core/Core/HW/HSP/HSP_Device.cpp; sourceTree = SOURCE_ROOT; };
+		EE330005EE330005EE330005 /* VFFUtil.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VFFUtil.cpp; path = dolphin/Source/Core/Core/IOS/Network/KD/VFF/VFFUtil.cpp; sourceTree = SOURCE_ROOT; };
+		EE330007EE330007EE330007 /* Infinity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Infinity.cpp; path = dolphin/Source/Core/Core/IOS/USB/Emulated/Infinity.cpp; sourceTree = SOURCE_ROOT; };
+		EE330009EE330009EE330009 /* Skylander.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Skylander.cpp; path = dolphin/Source/Core/Core/IOS/USB/Emulated/Skylanders/Skylander.cpp; sourceTree = SOURCE_ROOT; };
+		EE33000BEE33000BEE33000B /* WiiSpeak.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WiiSpeak.cpp; path = dolphin/Source/Core/Core/IOS/USB/Emulated/WiiSpeak.cpp; sourceTree = SOURCE_ROOT; };
+		EE33000DEE33000DEE33000D /* LogitechMic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LogitechMic.cpp; path = dolphin/Source/Core/Core/IOS/USB/Emulated/LogitechMic.cpp; sourceTree = SOURCE_ROOT; };
+		EE33000FEE33000FEE33000F /* ConstantPropagation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ConstantPropagation.cpp; path = dolphin/Source/Core/Core/PowerPC/JitCommon/ConstantPropagation.cpp; sourceTree = SOURCE_ROOT; };
+		EE330011EE330011EE330011 /* MagneticCardReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MagneticCardReader.cpp; path = dolphin/Source/Core/Core/HW/MagCard/MagneticCardReader.cpp; sourceTree = SOURCE_ROOT; };
+		EE330013EE330013EE330013 /* C1231BR.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = C1231BR.cpp; path = dolphin/Source/Core/Core/HW/MagCard/C1231BR.cpp; sourceTree = SOURCE_ROOT; };
+		EE330015EE330015EE330015 /* C1231LR.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = C1231LR.cpp; path = dolphin/Source/Core/Core/HW/MagCard/C1231LR.cpp; sourceTree = SOURCE_ROOT; };
+		EE33001AEE33001AEE33001A /* HSP_DeviceARAMExpansion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HSP_DeviceARAMExpansion.cpp; path = dolphin/Source/Core/Core/HW/HSP/HSP_DeviceARAMExpansion.cpp; sourceTree = SOURCE_ROOT; };
+		EE33001CEE33001CEE33001C /* HSP_DeviceNull.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HSP_DeviceNull.cpp; path = dolphin/Source/Core/Core/HW/HSP/HSP_DeviceNull.cpp; sourceTree = SOURCE_ROOT; };
+		EE33001EEE33001EEE33001E /* Microphone.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Microphone.cpp; path = dolphin/Source/Core/Core/IOS/USB/Emulated/Microphone.cpp; sourceTree = SOURCE_ROOT; };
+		EE330020EE330020EE330020 /* SkylanderFigure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SkylanderFigure.cpp; path = dolphin/Source/Core/Core/IOS/USB/Emulated/Skylanders/SkylanderFigure.cpp; sourceTree = SOURCE_ROOT; };
 		558C1ACB2F62A10200E8C92B /* x509asn1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = x509asn1.h; sourceTree = "<group>"; };
 		558C1ACC2F62A10200E8C92B /* x509asn1.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = x509asn1.c; sourceTree = "<group>"; };
 		558C1AE22F62A14A00E8C92B /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
@@ -4325,6 +4373,16 @@
 		EEF4EEA0224AAE650077748D /* glslang.y */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.yacc; path = glslang.y; sourceTree = "<group>"; };
 		EEF4EEA1224AAE650077748D /* RemoveTree.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RemoveTree.h; sourceTree = "<group>"; };
 		EEF4EEA2224AAE650077748D /* Initialize.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Initialize.cpp; sourceTree = "<group>"; };
+		FF110001FF110001FF110001 /* SpirvIntrinsics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SpirvIntrinsics.cpp; path = dolphin/Externals/glslang/glslang/glslang/MachineIndependent/SpirvIntrinsics.cpp; sourceTree = SOURCE_ROOT; };
+		FF220001FF220001FF220001 /* spirv_cross.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross.cpp; path = dolphin/Externals/spirv_cross/SPIRV-Cross/spirv_cross.cpp; sourceTree = SOURCE_ROOT; };
+		FF220003FF220003FF220003 /* spirv_cross_parsed_ir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross_parsed_ir.cpp; path = dolphin/Externals/spirv_cross/SPIRV-Cross/spirv_cross_parsed_ir.cpp; sourceTree = SOURCE_ROOT; };
+		FF220005FF220005FF220005 /* spirv_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_parser.cpp; path = dolphin/Externals/spirv_cross/SPIRV-Cross/spirv_parser.cpp; sourceTree = SOURCE_ROOT; };
+		FF220007FF220007FF220007 /* spirv_cfg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cfg.cpp; path = dolphin/Externals/spirv_cross/SPIRV-Cross/spirv_cfg.cpp; sourceTree = SOURCE_ROOT; };
+		FF220009FF220009FF220009 /* spirv_glsl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_glsl.cpp; path = dolphin/Externals/spirv_cross/SPIRV-Cross/spirv_glsl.cpp; sourceTree = SOURCE_ROOT; };
+		FF22000BFF22000BFF22000B /* spirv_msl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_msl.cpp; path = dolphin/Externals/spirv_cross/SPIRV-Cross/spirv_msl.cpp; sourceTree = SOURCE_ROOT; };
+		FF22000DFF22000DFF22000D /* spirv_cross_util.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spirv_cross_util.cpp; path = dolphin/Externals/spirv_cross/SPIRV-Cross/spirv_cross_util.cpp; sourceTree = SOURCE_ROOT; };
+		FF330001FF330001FF330001 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		FF330002FF330002FF330002 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		EEF4EEA3224AAE650077748D /* glslang_tab.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = glslang_tab.cpp; sourceTree = "<group>"; };
 		EEF4EEA4224AAE650077748D /* limits.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = limits.cpp; sourceTree = "<group>"; };
 		EEF4EEA5224AAE650077748D /* parseConst.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parseConst.cpp; sourceTree = "<group>"; };
@@ -4479,6 +4537,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				5574741F2F64AEDA00F240F0 /* libFatFs.a in Frameworks */,
+				EE330017EE330017EE330017 /* libvideometal.a in Frameworks */,
+				FF330003FF330003FF330003 /* Metal.framework in Frameworks */,
+				FF330004FF330004FF330004 /* QuartzCore.framework in Frameworks */,
 				3E3D775B1C840AA000091C4D /* OpenEmuBase.framework in Frameworks */,
 				8355D4FA1A653EF200E73302 /* libiconv.dylib in Frameworks */,
 				8355D4F91A653EE600E73302 /* IOKit.framework in Frameworks */,
@@ -9820,6 +9881,7 @@
 			);
 			dependencies = (
 				5574741E2F64AED200F240F0 /* PBXTargetDependency */,
+				EE330019EE330019EE330019 /* PBXTargetDependency */,
 				5550902C27FA9E6A00CA618C /* PBXTargetDependency */,
 				5550902E27FA9E6A00CA618C /* PBXTargetDependency */,
 				5550903027FA9E6A00CA618C /* PBXTargetDependency */,
@@ -10349,6 +10411,21 @@
 				DD22002ADD22002ADD22002A /* AesDevice.cpp in Sources */,
 				DD22002CDD22002CDD22002C /* Sha.cpp in Sources */,
 				DD22002EDD22002EDD22002E /* WC24PatchEngine.cpp in Sources */,
+				EE330002EE330002EE330002 /* TAPServerModem.cpp in Sources */,
+				EE330004EE330004EE330004 /* HSP_Device.cpp in Sources */,
+				EE330006EE330006EE330006 /* VFFUtil.cpp in Sources */,
+				EE330008EE330008EE330008 /* Infinity.cpp in Sources */,
+				EE33000AEE33000AEE33000A /* Skylander.cpp in Sources */,
+				EE33000CEE33000CEE33000C /* WiiSpeak.cpp in Sources */,
+				EE33000EEE33000EEE33000E /* LogitechMic.cpp in Sources */,
+				EE330010EE330010EE330010 /* ConstantPropagation.cpp in Sources */,
+				EE330012EE330012EE330012 /* MagneticCardReader.cpp in Sources */,
+				EE330014EE330014EE330014 /* C1231BR.cpp in Sources */,
+				EE330016EE330016EE330016 /* C1231LR.cpp in Sources */,
+				EE33001BEE33001BEE33001B /* HSP_DeviceARAMExpansion.cpp in Sources */,
+				EE33001DEE33001DEE33001D /* HSP_DeviceNull.cpp in Sources */,
+				EE33001FEE33001FEE33001F /* Microphone.cpp in Sources */,
+				EE330021EE330021EE330021 /* SkylanderFigure.cpp in Sources */,
 				3E3D73FC1C82B0F900091C4D /* Interpreter_LoadStorePaired.cpp in Sources */,
 				3E8EC6641F8434AA00D79F27 /* SI_Device.cpp in Sources */,
 				EE149BA9205A270F008D5DDE /* DSPJitMisc.cpp in Sources */,
@@ -11113,6 +11190,13 @@
 				5574743F2F64AF1300F240F0 /* MTLPipeline.mm in Sources */,
 				557474402F64AF1300F240F0 /* MTLVertexFormat.mm in Sources */,
 				557474412F64AF1300F240F0 /* MTLMain.mm in Sources */,
+				FF220002FF220002FF220002 /* spirv_cross.cpp in Sources */,
+				FF220004FF220004FF220004 /* spirv_cross_parsed_ir.cpp in Sources */,
+				FF220006FF220006FF220006 /* spirv_parser.cpp in Sources */,
+				FF220008FF220008FF220008 /* spirv_cfg.cpp in Sources */,
+				FF22000AFF22000AFF22000A /* spirv_glsl.cpp in Sources */,
+				FF22000CFF22000CFF22000C /* spirv_msl.cpp in Sources */,
+				FF22000EFF22000EFF22000E /* spirv_cross_util.cpp in Sources */,
 				557474422F64AF1300F240F0 /* MTLUtil.mm in Sources */,
 				557474432F64AF1300F240F0 /* MTLTexture.mm in Sources */,
 				557474442F64AF1300F240F0 /* MTLPerfQuery.mm in Sources */,
@@ -11658,6 +11742,7 @@
 				EEF4EF01224AAFB50077748D /* Constant.cpp in Sources */,
 				EEF4EF04224AAFC00077748D /* PpAtom.cpp in Sources */,
 				EEF4EEF1224AAFB50077748D /* Initialize.cpp in Sources */,
+				FF110002FF110002FF110002 /* SpirvIntrinsics.cpp in Sources */,
 				EEF4EEFC224AAFB50077748D /* SymbolTable.cpp in Sources */,
 				EEF4EEF8224AAFB50077748D /* PoolAlloc.cpp in Sources */,
 			);
@@ -11835,6 +11920,11 @@
 			isa = PBXTargetDependency;
 			target = 557473DC2F64AA7B00F240F0 /* FatFs */;
 			targetProxy = 5574741D2F64AED200F240F0 /* PBXContainerItemProxy */;
+		};
+		EE330019EE330019EE330019 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 557474082F64AEBB00F240F0 /* videometal */;
+			targetProxy = EE330018EE330018EE330018 /* PBXContainerItemProxy */;
 		};
 		8355D4B71A65392600E73302 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -13573,6 +13663,11 @@
 					$SRCROOT/dolphin/Source/Core,
 					$SRCROOT/dolphin/Source/Core/Common/Compat,
 					$SRCROOT/dolphin/Externals/fmt/fmt/include,
+					$SRCROOT/dolphin/Externals/spirv_cross/SPIRV-Cross,
+					$SRCROOT/dolphin/Externals/mbedtls/include,
+					$SRCROOT/dolphin/Externals,
+					$SRCROOT/dolphin/Externals/libpng,
+					$SRCROOT/dolphin/Externals/glslang/glslang,
 				);
 				INSTALL_PATH = "";
 				LIBRARY_STYLE = STATIC;
@@ -13895,6 +13990,7 @@
 					$SRCROOT/dolphin/Externals/cpp-ipc/cpp-ipc/include,
 					$SRCROOT/dolphin/Externals/tinygltf,
 					$SRCROOT/dolphin/Externals/glslang/glslang,
+					$SRCROOT/dolphin/Externals/FatFs,
 				);
 				INSTALL_PATH = "";
 				LIBRARY_STYLE = STATIC;
