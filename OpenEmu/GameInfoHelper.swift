@@ -46,7 +46,7 @@ final class GameInfoHelper {
             let url = gameInfo["URL"] as? URL
 
             guard let database = database else {
-                // OpenVGDB unavailable — still try ScreenScraper if credentials are configured
+                // OpenVGDB unavailable — still try ScreenScraper if user credentials are configured
                 let ssUsername = UserDefaults.standard.string(forKey: "ScreenScraperUsername") ?? ""
                 let ssPassword = ScreenScraperCredentials.storedPassword() ?? ""
                 guard !ssUsername.isEmpty && !ssPassword.isEmpty else { return [:] }
