@@ -132,24 +132,46 @@ jobs:
             "$RUNNER_TEMP/OpenEmu-notarize.zip"
 
       - name: Notarize app
+        # Use --no-wait + polling loop instead of --wait to avoid long-lived
+        # connections that drop when Apple's service is slow (seen taking 26-46 min).
+        # Each poll is a short independent request resilient to network blips.
         run: |
-          SUBMISSION=$(xcrun notarytool submit "$RUNNER_TEMP/OpenEmu-notarize.zip" \
+          RESULT=$(xcrun notarytool submit "$RUNNER_TEMP/OpenEmu-notarize.zip" \
             --apple-id "${{ secrets.APPLE_ID }}" \
             --password "${{ secrets.APPLE_ID_PASSWORD }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-            --wait --output-format json)
-          echo "$SUBMISSION"
-          STATUS=$(echo "$SUBMISSION" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-          ID=$(echo "$SUBMISSION" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-          if [ "$STATUS" != "Accepted" ]; then
-            echo "Notarization rejected (status: $STATUS). Fetching log..."
-            xcrun notarytool log "$ID" \
+            --no-wait --output-format json)
+          echo "$RESULT"
+          ID=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+          echo "Submission ID: $ID"
+
+          STATUS="In Progress"
+          for i in $(seq 1 60); do
+            sleep 60
+            POLL=$(xcrun notarytool info "$ID" \
               --apple-id "${{ secrets.APPLE_ID }}" \
               --password "${{ secrets.APPLE_ID_PASSWORD }}" \
-              --team-id "${{ secrets.APPLE_TEAM_ID }}"
+              --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+              --output-format json 2>/dev/null || echo '{"status":"error"}')
+            STATUS=$(echo "$POLL" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','error'))" 2>/dev/null || echo "error")
+            echo "[$i/60] Status: $STATUS"
+            if [ "$STATUS" = "Accepted" ]; then
+              echo "Notarization accepted."
+              break
+            elif [ "$STATUS" = "Invalid" ]; then
+              echo "Notarization rejected. Fetching log..."
+              xcrun notarytool log "$ID" \
+                --apple-id "${{ secrets.APPLE_ID }}" \
+                --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+                --team-id "${{ secrets.APPLE_TEAM_ID }}"
+              exit 1
+            fi
+          done
+
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Timed out after 60 minutes. Final status: $STATUS"
             exit 1
           fi
-          echo "Notarization accepted."
 
       - name: Staple notarization ticket to app
         run: |
