@@ -137,8 +137,9 @@ void DolHost::Init(std::string supportDirectoryPath, std::string cpath)
     Config::SetBase(Config::MAIN_DSP_THREAD, true);
     Config::SetBase(Config::MAIN_AUDIO_VOLUME, 0);
     
-    // Single-core mode: CPU and GPU on same thread (simpler, safer for OE process model)
-    Config::SetBase(Config::MAIN_CPU_THREAD, false);
+    // Dual-core mode: CPU and GPU on separate threads for better performance.
+    // HostDispatchJobs is called from OE's UpdateFrame() loop and is thread-safe in both modes.
+    Config::SetBase(Config::MAIN_CPU_THREAD, true);
     
     //Analitics
     Config::SetBase(Config::MAIN_ANALYTICS_PERMISSION_ASKED, true);

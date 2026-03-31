@@ -205,6 +205,18 @@ DolphinGameCore *_current = 0;
     desc.storageMode = MTLStorageModePrivate;
     _dolMetalTexture = [device newTextureWithDescriptor:desc];
 
+    // Clear to black so frame 0 composites black instead of uninitialized magenta.
+    id<MTLCommandQueue> q = [device newCommandQueue];
+    id<MTLCommandBuffer> cb = [q commandBuffer];
+    MTLRenderPassDescriptor *rpd = [MTLRenderPassDescriptor renderPassDescriptor];
+    rpd.colorAttachments[0].texture    = _dolMetalTexture;
+    rpd.colorAttachments[0].loadAction = MTLLoadActionClear;
+    rpd.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1);
+    rpd.colorAttachments[0].storeAction = MTLStoreActionStore;
+    [[cb renderCommandEncoderWithDescriptor:rpd] endEncoding];
+    [cb commit];
+    [cb waitUntilCompleted];
+
     // Sizing layer: gives Dolphin's Metal backend real surface dimensions for SetupSurface().
     // BindBackbuffer bypasses this layer's drawables and uses _dolMetalTexture directly.
     _dolMetalLayer              = [CAMetalLayer layer];
@@ -219,6 +231,12 @@ DolphinGameCore *_current = 0;
 {
     return _dolMetalTexture;
 }
+
+// MTL3DGameRenderer.update() reads these to resolve OEMTLPixelFormat even in Metal2 mode.
+// GL_BGRA (0x80E1) + GL_UNSIGNED_INT_8_8_8_8_REV (0x8367) → OEMTLPixelFormat.BGRA8Unorm,
+// matching the MTLPixelFormatBGRA8Unorm texture we create above.
+- (GLenum)pixelFormat  { return 0x80E1; } // GL_BGRA
+- (GLenum)pixelType    { return 0x8367; } // GL_UNSIGNED_INT_8_8_8_8_REV
 
 - (const void *)videoBuffer
 {
