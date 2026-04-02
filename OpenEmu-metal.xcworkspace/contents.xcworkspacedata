@@ -37,4 +37,7 @@
    <FileRef
       location = "group:PPSSPP/PPSSPP-Core/PPSSPP.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:4DO/4DO.xcodeproj">
+   </FileRef>
 </Workspace>
