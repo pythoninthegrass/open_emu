@@ -474,9 +474,11 @@ class AppDelegate: NSObject {
             default:
                 break
             }
+            // Re-enumerate keyboards in case permission was granted after init.
+            dm.rescanKeyboardDevices()
         }
     }
-    
+
     fileprivate func showInputMonitoringPermissionsAlert() {
         #if DEBUG
         if UserDefaults.standard.bool(forKey: "pleaseDoNotAnnoyMeWithThePermissionsAlertEveryTimeIRunThisAppFromXcode") {
@@ -878,6 +880,7 @@ extension AppDelegate: NSMenuDelegate {
             return
         }
 
+        OECoreMigration.runIfNeeded()
         loadPlugins(with: database)
         removeIncompatibleSaveStates(from: database)
 
@@ -1030,6 +1033,9 @@ extension AppDelegate: NSMenuDelegate {
     
     func applicationDidBecomeActive(_ notification: Notification) {
         updateEventHandlers()
+        if #available(macOS 10.15, *) {
+            OEDeviceManager.shared.rescanKeyboardDevices()
+        }
     }
     
     @objc func windowDidBecomeKey(notification: Notification) {
