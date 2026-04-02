@@ -4,15 +4,6 @@
   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>DeSmuME</title>
-    <item>
-      <title>DeSmuME 0.9.11</title>
-      <sparkle:minimumSystemVersion>11.0</sparkle:minimumSystemVersion>
-      <enclosure
-        url="https://github.com/nickybmon/OpenEmu-Silicon/releases/download/cores-v1.0.0/DeSmuME.oecoreplugin.zip"
-        sparkle:version="0.9.11"
-        sparkle:shortVersionString="0.9.11"
-        length="0"
-        type="application/octet-stream" />
-    </item>
+    <!-- No item: build not yet available for ARM64 -->
   </channel>
 </rss>
