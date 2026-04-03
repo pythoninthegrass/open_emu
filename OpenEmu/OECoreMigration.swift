@@ -95,4 +95,35 @@ enum OECoreMigration {
             alert.runModal()
         }
     }
+
+    /// Re-signs all installed core plugins with an ad-hoc signature on the
+    /// first launch of each new app version.
+    ///
+    /// Defense-in-depth against release-signing regressions: if the shipped app
+    /// ever loses its `disable-library-validation` entitlement, cores re-signed
+    /// here will still carry a fresh ad-hoc signature so a subsequent fix
+    /// release can load them without reinstalling. Runs once per app version
+    /// (gated on CFBundleVersion) and is a no-op on subsequent launches.
+    static func resignCoresIfNeeded() {
+        let versionKey = "OECoresResignedForVersion"
+        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        guard UserDefaults.standard.string(forKey: versionKey) != currentVersion else { return }
+
+        let fm = FileManager.default
+        let cores = coresDirectory
+        guard fm.fileExists(atPath: cores.path) else { return }
+
+        let items = (try? fm.contentsOfDirectory(at: cores, includingPropertiesForKeys: nil)) ?? []
+        for item in items where item.pathExtension == "oecoreplugin" {
+            let task = Process()
+            task.launchPath = "/usr/bin/codesign"
+            task.arguments = ["--force", "--sign", "-", item.path]
+            task.standardOutput = FileHandle.nullDevice
+            task.standardError = FileHandle.nullDevice
+            try? task.run()
+            task.waitUntilExit()
+        }
+
+        UserDefaults.standard.set(currentVersion, forKey: versionKey)
+    }
 }
