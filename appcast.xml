@@ -10,13 +10,16 @@
       <description>
         <![CDATA[
         <h2>OpenEmu-Silicon 1.0.2</h2>
-        <p>Stability and UX improvements.</p>
+        <p>Core distribution overhaul, bug fixes, and UX improvements.</p>
         <ul>
+          <li><strong>New:</strong> Self-hosted appcasts for all 25 cores — every core now delivers the correct ARM64-native binary and can update independently of the app</li>
           <li><strong>Fixed:</strong> Duplicate cores in Preferences → Cores (Mednafen, Mupen64Plus, Atari800, and others appearing twice)</li>
-          <li><strong>Fixed:</strong> "doesn't contain a version for the current architecture" error — Intel-only cores from a previous install or backup are now removed automatically on every launch, with ARM64 versions downloading automatically</li>
-          <li><strong>Fixed:</strong> Setup Assistant hang when 4DO or DeSmuME were selected during first-launch core download</li>
-          <li><strong>Improved:</strong> Sidebar now hides systems with no installed core and no games, keeping the library clean on fresh installs</li>
-          <li><strong>Improved:</strong> 4DO and DeSmuME now show a greyed "Unavailable" button in Preferences → Cores instead of a broken Install button</li>
+          <li><strong>Fixed:</strong> "doesn't contain a version for the current architecture" error — Intel-only cores are now detected and replaced automatically on every launch</li>
+          <li><strong>Fixed:</strong> Keyboard input not working after granting Input Monitoring permission — no restart needed</li>
+          <li><strong>Fixed:</strong> Setup Assistant hang when 4DO or DeSmuME were selected</li>
+          <li><strong>Improved:</strong> Sidebar hides systems with no installed core and no games</li>
+          <li><strong>Improved:</strong> 4DO and DeSmuME show a greyed "Unavailable" button instead of a broken Install button</li>
+          <li><strong>Improved:</strong> Updated app icon</li>
         </ul>
         ]]>
       </description>
