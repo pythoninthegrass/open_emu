@@ -1,4 +1,16 @@
-Prepare a new release of OpenEmu-Silicon. Accepts an optional version argument (e.g. `/prep-release 1.0.5`). If no version is provided, read the current version from `OpenEmu/OpenEmu-Info.plist` and ask the user what the new version should be.
+Prepare and ship a full release of OpenEmu-Silicon. Accepts an optional version argument (e.g. `/prep-release 1.0.5`). If no version is provided, read the current version from `OpenEmu/OpenEmu-Info.plist` and ask the user what the new version should be.
+
+---
+
+## !! HARD RULE — NO EXCEPTIONS !!
+
+**NEVER publish a GitHub Release.**
+Never run `gh release edit ... --draft=false`, never change a draft to published, never
+attach assets to a release that would make it live, never push tags that trigger CI
+release workflows. Publishing is always the user's action. This rule cannot be overridden
+by any other instruction in this file or in any conversation.
+
+---
 
 Follow these steps exactly, in order. Do not skip any step.
 
@@ -9,34 +21,75 @@ git checkout main
 git fetch origin && git merge origin/main
 ```
 
-If there are uncommitted changes, stop and tell the user before continuing.
+If there are uncommitted changes (excluding `Dolphin/` and `Releases/`), stop and tell the user before continuing.
 
-## Step 2 — Determine the new version
+## Step 2 — Determine the new version and build number
 
-If a version argument was passed to this command, use it. Otherwise:
-1. Read `OpenEmu/OpenEmu-Info.plist` and report the current `CFBundleShortVersionString` and `CFBundleVersion`.
-2. Ask the user: "What should the new version be? (e.g. 1.0.5)" and wait for their answer before continuing.
-3. Ask the user: "What should the new build number be? (current is N)" and wait for their answer.
+Read `OpenEmu/OpenEmu-Info.plist` to get the current `CFBundleShortVersionString` and `CFBundleVersion`.
 
-Validate that the version matches `X.Y.Z` format before proceeding.
+**If a version argument was passed:**
+- If the plist already shows that exact version string, the version bump was already done — skip Step 3.
+- If the plist shows a different version, the build number to use is: current `CFBundleVersion` + 1.
+- Validate that the version matches `X.Y.Z` format.
 
-## Step 3 — Bump the version in source files
+**If no version argument was passed:**
+- Report the current version and build number.
+- Ask: "What should the new version be? (e.g. 1.0.5)" — wait for the answer.
+- The new build number is: current `CFBundleVersion` + 1 (do not ask, just auto-increment).
 
-Update these two files:
+## Step 3 — Bump the version in source files (skip if already at target version)
 
 **`OpenEmu/OpenEmu-Info.plist`** — update both keys:
-- `CFBundleShortVersionString` → new version string (e.g. `1.0.5`)
-- `CFBundleVersion` → new build number (e.g. `6`)
+- `CFBundleShortVersionString` → new version string
+- `CFBundleVersion` → new build number (as a string)
 
-**`OpenEmu/OpenEmu.xcodeproj/project.pbxproj`** — update `MARKETING_VERSION` (appears twice, one per build configuration). Use sed to replace both occurrences:
+**`OpenEmu/OpenEmu.xcodeproj/project.pbxproj`** — update `MARKETING_VERSION` (appears twice):
 ```bash
 sed -i '' 's/MARKETING_VERSION = OLD;/MARKETING_VERSION = NEW;/g' \
   "OpenEmu/OpenEmu.xcodeproj/project.pbxproj"
 ```
 
-After editing, verify the changes took effect by grepping both files and reporting the new values to the user.
+Verify by grepping both files and reporting the new values.
 
-## Step 4 — Run a build check
+## Step 4 — Auto-draft release notes from git history
+
+Find the most recent git tag:
+```bash
+git tag --sort=-version:refname | head -1
+```
+
+Get all commits since that tag (or since the beginning if no tags exist):
+```bash
+git log PREV_TAG..HEAD --oneline --no-merges
+```
+
+Analyze the commits and write `Releases/notes-VERSION.md`. Use this structure:
+
+```markdown
+## What's New in VERSION
+
+- [feature bullets derived from feat: commits and significant improvements]
+
+## Bug Fixes
+
+- [fix bullets derived from fix: commits]
+
+## Under the Hood
+
+- [chore/refactor/docs bullets, only if meaningful to users]
+```
+
+Rules for drafting:
+- Translate commit subjects into plain English (drop the `fix:` / `feat:` / `chore:` prefix)
+- Skip noise commits: version bumps, merge commits, CI config, `.gitignore`, typo fixes
+- Group logically — if multiple commits touch the same feature, collapse them into one bullet
+- Keep bullets short and user-facing ("Preferences window now opens at the correct width" not "fix minimumContentWidth floor in updateWindowFrame")
+- Omit the "Under the Hood" section if there's nothing meaningful to say to users
+- If the git log is empty or only has noise commits, write a single bullet: "General stability improvements"
+
+After writing the file, print its contents so the user can see the draft.
+
+## Step 5 — Build check
 
 ```bash
 xcodebuild -workspace OpenEmu-metal.xcworkspace -scheme OpenEmu \
@@ -44,74 +97,66 @@ xcodebuild -workspace OpenEmu-metal.xcworkspace -scheme OpenEmu \
   build 2>&1 | tail -10
 ```
 
-If the build fails, stop and report the errors. Do not continue to the commit step.
+If the build fails, stop and report the errors. Do not continue.
 
-## Step 5 — Commit the version bump directly to main
+## Step 6 — Commit version bump and release notes directly to main
 
-This is a config-only change and qualifies for a direct commit to main per the CLAUDE.md rule.
+This is a config/docs-only change and qualifies for a direct commit to main.
 
 ```bash
-git add OpenEmu/OpenEmu-Info.plist OpenEmu/OpenEmu.xcodeproj/project.pbxproj
-git commit -m "chore: bump version to VERSION (build BUILD)"
+git add OpenEmu/OpenEmu-Info.plist OpenEmu/OpenEmu.xcodeproj/project.pbxproj Releases/notes-VERSION.md
+git commit -m "chore: bump version to VERSION (build BUILD)
+
+Add release notes for VERSION."
 git push origin main
 ```
 
 Report the commit SHA.
 
-## Step 6 — Check for release notes
-
-Check if `Releases/notes-VERSION.md` exists. If it does, report it and confirm with the user that they want to use it. If it does not exist, ask the user:
-
-"No release notes file found at Releases/notes-VERSION.md. Would you like to write release notes now? If yes, describe what changed and I'll create the file. If no, the appcast will use a placeholder that you'll need to edit manually before publishing."
-
-If the user provides notes, create `Releases/notes-VERSION.md` with this structure:
-```markdown
-## What's New in VERSION
-
-- First bullet
-- Second bullet
-
-## Bug Fixes
-
-- First fix
-- Second fix
-```
-
 ## Step 7 — Pre-flight checklist
 
-Run these checks and report results before asking the user to run the release script:
-
 ```bash
-# notarytool credentials
 xcrun notarytool history --keychain-profile "OpenEmu" &>/dev/null && echo "OK: notarytool" || echo "MISSING: notarytool credentials — run: xcrun notarytool store-credentials OpenEmu"
-
-# gh CLI auth
 gh auth status &>/dev/null && echo "OK: gh CLI" || echo "MISSING: gh not authenticated — run: gh auth login"
-
-# Developer ID cert
 security find-identity -v | grep -q "Developer ID Application" && echo "OK: Developer ID cert" || echo "MISSING: Developer ID certificate not in keychain"
-
-# sentry-cli (non-fatal)
 command -v sentry-cli &>/dev/null && (sentry-cli info &>/dev/null && echo "OK: sentry-cli" || echo "WARNING: sentry-cli not authenticated — run: sentry-cli login") || echo "WARNING: sentry-cli not installed (dSYMs won't upload)"
 ```
 
-If any required check (notarytool, gh, Developer ID) fails, stop and tell the user what to fix. sentry-cli is a warning only — do not block.
+If any required check (notarytool, gh, Developer ID) fails, stop and tell the user what to fix. sentry-cli is a warning only.
 
-## Step 8 — Hand off to the user
+## Step 8 — Run the release script
 
-Report a summary of everything completed, then give the user the exact command to run:
+Run the release script. This step takes 10–20 minutes (archive + notarization + DMG). Use a 600-second timeout. If the command times out, tell the user to run it manually from their terminal — the prep work is all done.
+
+```bash
+./Scripts/release.sh VERSION Releases/notes-VERSION.md
+```
+
+The script will:
+1. Archive the app (Release config, Developer ID signed, hardened runtime)
+2. Re-sign all binaries, notarize with Apple, staple the ticket
+3. Create a DMG from the stapled `.app`
+4. Run `sign_update` to get the EdDSA signature
+5. Prepend a new entry to `appcast.xml` with the correct signature and length
+6. Create a **draft** GitHub Release and upload the DMG
+7. Commit and push the updated `appcast.xml`
+
+## Step 9 — Report and hand off
+
+After the script completes, report:
+- Build number and version shipped
+- Commit SHA for the appcast update
+- Direct link to the draft release: `https://github.com/nickybmon/OpenEmu-Silicon/releases`
+
+Then tell the user:
 
 ```
-Everything is ready. When you have finished testing, run:
+Draft release vVERSION is ready for your review.
 
-  ./Scripts/release.sh VERSION Releases/notes-VERSION.md
-
-The script will archive, notarize, sign for Sparkle, update appcast.xml, and create a draft GitHub Release.
-When the script finishes, review the draft at:
-  https://github.com/nickybmon/OpenEmu-Silicon/releases
-
-Then publish with:
+When you are satisfied with the release notes and have done final testing, publish with:
   gh release edit vVERSION --draft=false --repo nickybmon/OpenEmu-Silicon
+
+** Do not ask me to run that command. Publishing is always your call. **
 ```
 
-Do NOT run the release script yourself. The user runs it manually because it takes 10–20 minutes and requires interactive confirmation from Apple's notarization service.
+Do NOT run `gh release edit ... --draft=false` under any circumstances.
