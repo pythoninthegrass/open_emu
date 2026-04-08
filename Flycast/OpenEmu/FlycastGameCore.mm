@@ -153,11 +153,6 @@ __weak FlycastGameCore *_current;
 
 - (void)stopEmulationWithCompletionHandler:(void(^)(void))completionHandler
 {
-    // emu.render() runs the SH4 emulator synchronously on the game loop thread.
-    // The completion block posted via -performBlock: cannot execute while that
-    // thread is still inside emu.render(). Signal emu.stop() here, from the
-    // calling thread, so the emulator exits at its next scheduler check and
-    // the game loop thread becomes free to process the completion block.
     if (_isInitialized)
         emu.stop();
     [super stopEmulationWithCompletionHandler:completionHandler];
