@@ -50,6 +50,22 @@
 #include <OpenGL/gl3.h>
 #include <sys/stat.h>
 
+// Debug logging to /tmp/flycast_debug.log — NSLog from the helper process is invisible
+static FILE *_debugLog = nullptr;
+static void flylog(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+static void flylog(const char *fmt, ...) {
+    if (!_debugLog) {
+        _debugLog = fopen("/tmp/flycast_debug.log", "w");
+        if (!_debugLog) return;
+        setbuf(_debugLog, NULL);
+    }
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(_debugLog, fmt, args);
+    va_end(args);
+    fprintf(_debugLog, "\n");
+}
+
 #define SAMPLERATE 44100
 #define SIZESOUNDBUFFER (44100 / 60 * 4)
 
@@ -124,7 +140,12 @@ __weak FlycastGameCore *_current;
     NSString *savesPath   = [self batterySavesDirectoryPath];
     NSString *biosPath    = [self biosDirectoryPath];
 
+    flylog("[Flycast] setupEmulation bios=%s", biosPath.fileSystemRepresentation);
     NSFileManager *fm = [NSFileManager defaultManager];
+    for (NSString *b in @[@"dc_boot.bin", @"dc_flash.bin"]) {
+        flylog("[Flycast] BIOS %s: %s", b.UTF8String,
+               [fm fileExistsAtPath:[biosPath stringByAppendingPathComponent:b]] ? "FOUND" : "MISSING");
+    }
     [fm createDirectoryAtPath:[supportPath stringByAppendingPathComponent:@"data"]
   withIntermediateDirectories:YES attributes:nil error:nil];
     [fm createDirectoryAtPath:savesPath
@@ -135,13 +156,10 @@ __weak FlycastGameCore *_current;
     add_system_data_dir(supportPath.fileSystemRepresentation);
     add_system_data_dir(biosPath.fileSystemRepresentation);
 
+    flylog("[Flycast] emu.init() start");
     config::RendererType = RenderType::OpenGL;
     config::AudioBackend.set("openemu");
-    // Disable the SH4 JIT dynarec — the ARM64 recompiler causes a black screen
-    // due to a race with the OE render thread (FBO not bound when JIT's render
-    // loop calls theGLContext.swap()). Ship with the CPP interpreter for now;
-    // re-enable once the JIT render path is fixed.
-    config::DynarecEnabled = false;
+    config::DynarecEnabled = true;
 
     if (!addrspace::reserve()) {
         NSLog(@"[Flycast] Failed to reserve Dreamcast address space");
@@ -149,6 +167,7 @@ __weak FlycastGameCore *_current;
     os_InstallFaultHandler();
 
     emu.init();
+    flylog("[Flycast] emu.init() done");
 }
 
 - (void)startEmulation
@@ -194,27 +213,50 @@ __weak FlycastGameCore *_current;
 - (void)executeFrame
 {
     if (!_isInitialized) {
+        GLint boundFBO = 0;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &boundFBO);
+        flylog("[Flycast] executeFrame init — OE FBO at entry: %d", boundFBO);
         try {
             gui_init();
             theGLContext.init();
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &boundFBO);
+            flylog("[Flycast] after theGLContext.init() FBO: %d", boundFBO);
             emu.loadGame(_romPath.fileSystemRepresentation);
+            flylog("[Flycast] loadGame done");
             config::ThreadedRendering.override(false);
             rend_init_renderer();
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &boundFBO);
+            flylog("[Flycast] after rend_init_renderer() FBO: %d", boundFBO);
             settings.display.width  = _videoWidth;
             settings.display.height = _videoHeight;
+            flylog("[Flycast] display size set to %dx%d", _videoWidth, _videoHeight);
             emu.start();
+            flylog("[Flycast] emu.start() done — emulation running");
             gui_setState(GuiState::Closed);
             _isInitialized = YES;
         } catch (const std::exception &e) {
+            flylog("[Flycast] EXCEPTION loading game: %s", e.what());
             NSLog(@"[Flycast] Error loading game: %s", e.what());
             return;
         } catch (...) {
+            flylog("[Flycast] UNKNOWN EXCEPTION loading game");
             NSLog(@"[Flycast] Unknown error loading game");
             return;
         }
     }
 
-    emu.render();
+    GLint fboBeforeRender = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fboBeforeRender);
+    flylog("[Flycast] calling emu.render() — FBO=%d isRunning=%d", fboBeforeRender, (int)emu.running());
+    bool rendered = emu.render();
+    GLint fboAfterRender = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fboAfterRender);
+
+    static int frameCount = 0;
+    if (++frameCount <= 5 || frameCount % 60 == 0)
+        flylog("[Flycast] frame %d — emu.render()=%s FBO before=%d after=%d",
+               frameCount, rendered ? "true" : "false", fboBeforeRender, fboAfterRender);
+
     [self.renderDelegate presentDoubleBufferedFBO];
 }
 
