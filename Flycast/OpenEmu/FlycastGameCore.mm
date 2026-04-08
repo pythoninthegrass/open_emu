@@ -137,7 +137,11 @@ __weak FlycastGameCore *_current;
 
     config::RendererType = RenderType::OpenGL;
     config::AudioBackend.set("openemu");
-    config::DynarecEnabled = true;
+    // Disable the SH4 JIT dynarec — the ARM64 recompiler causes a black screen
+    // due to a race with the OE render thread (FBO not bound when JIT's render
+    // loop calls theGLContext.swap()). Ship with the CPP interpreter for now;
+    // re-enable once the JIT render path is fixed.
+    config::DynarecEnabled = false;
 
     if (!addrspace::reserve()) {
         NSLog(@"[Flycast] Failed to reserve Dreamcast address space");
@@ -150,6 +154,18 @@ __weak FlycastGameCore *_current;
 - (void)startEmulation
 {
     [super startEmulation];
+}
+
+- (void)stopEmulationWithCompletionHandler:(void(^)(void))completionHandler
+{
+    // emu.render() runs the SH4 emulator synchronously on the game loop thread.
+    // The completion block posted via -performBlock: cannot execute while that
+    // thread is still inside emu.render(). Signal emu.stop() here, from the
+    // calling thread, so the emulator exits at its next scheduler check and
+    // the game loop thread becomes free to process the completion block.
+    if (_isInitialized)
+        emu.stop();
+    [super stopEmulationWithCompletionHandler:completionHandler];
 }
 
 - (void)stopEmulation
@@ -184,6 +200,8 @@ __weak FlycastGameCore *_current;
             emu.loadGame(_romPath.fileSystemRepresentation);
             config::ThreadedRendering.override(false);
             rend_init_renderer();
+            settings.display.width  = _videoWidth;
+            settings.display.height = _videoHeight;
             emu.start();
             gui_setState(GuiState::Closed);
             _isInitialized = YES;
