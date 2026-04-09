@@ -47,8 +47,6 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-#define SAMPLERATE 48000
-#define SIZESOUNDBUFFER 48000 / 60 * 4
 #define OpenEmu 1
 
 @interface DolphinGameCore () <OEGCSystemResponderClient>
@@ -286,9 +284,16 @@ DolphinGameCore *_current = 0;
 - (NSUInteger)read:(void *)buffer maxLength:(NSUInteger)len
 {
     SoundStream* sound_stream = Core::System::GetInstance().GetSoundStream();
-    if (_isInitialized && sound_stream)
-        return static_cast<OpenEmuAudioStream*>(sound_stream)->readAudio(buffer, (int)len);
-    return 0;
+    if (_isInitialized && sound_stream) {
+        // Always consume the full requested length. Mix() may produce fewer samples
+        // than requested when the emulator is slightly behind; in that case the
+        // remaining bytes are already zeroed by Mix() (silence), so returning len
+        // prevents OE's audio layer from interpreting a short read as an underrun.
+        static_cast<OpenEmuAudioStream*>(sound_stream)->readAudio(buffer, (int)len);
+    } else {
+        memset(buffer, 0, len);
+    }
+    return len;
 }
 
 - (NSUInteger)write:(const void *)buffer maxLength:(NSUInteger)length
