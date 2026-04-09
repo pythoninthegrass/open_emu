@@ -284,12 +284,14 @@ DolphinGameCore *_current = 0;
 - (NSUInteger)read:(void *)buffer maxLength:(NSUInteger)len
 {
     SoundStream* sound_stream = Core::System::GetInstance().GetSoundStream();
-    if (_isInitialized && sound_stream) {
-        // Always consume the full requested length. Mix() may produce fewer samples
-        // than requested when the emulator is slightly behind; in that case the
-        // remaining bytes are already zeroed by Mix() (silence), so returning len
-        // prevents OE's audio layer from interpreting a short read as an underrun.
-        static_cast<OpenEmuAudioStream*>(sound_stream)->readAudio(buffer, (int)len);
+    OpenEmuAudioStream* oe_stream = dynamic_cast<OpenEmuAudioStream*>(sound_stream);
+    if (_isInitialized && oe_stream) {
+        // Always consume the full requested length. Mixer::Mix() zeroes the output
+        // buffer before mixing and always returns num_samples, so any frames Dolphin
+        // hasn't produced yet come back as silence. Returning len (not the Mix()
+        // return value) prevents AVAudioSourceNode from setting mDataByteSize to a
+        // short count, which would cause CoreAudio to output a click for the gap.
+        oe_stream->readAudio(buffer, (int)len);
     } else {
         memset(buffer, 0, len);
     }
