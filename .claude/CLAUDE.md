@@ -206,6 +206,23 @@ Custom commands live in `.claude/commands/`. Invoke with `/command-name`.
 
 ---
 
+## Versioning Policy
+
+This project uses **3-component semantic versioning** (`major.minor.patch`). Do not use 4-component versions (`1.0.5.1`) — they are non-standard for macOS apps, look odd in the About screen, and add no value since Sparkle compares by the integer build number anyway.
+
+| Type | When to use | Version bump | Example |
+|------|-------------|-------------|---------|
+| **Hotfix** | Critical crash or data-loss bug shipped immediately | `patch` | 1.0.5 → 1.0.6 |
+| **Patch release** | Batch of bug fixes or minor improvements | `patch` | 1.0.6 → 1.0.7 |
+| **Minor release** | New feature (new core, meaningful new capability) | `minor` | 1.0.7 → 1.1.0 |
+| **Major release** | Breaking change or architectural overhaul | `major` | 1.x → 2.0.0 |
+
+The difference between a hotfix and a patch release is **urgency and scope**, not numbering. Both bump the patch component. A hotfix ships immediately for a single critical fix; a patch release batches several improvements.
+
+**Build number** (`CFBundleVersion`) always increments by 1 regardless of version type. It is the authoritative number Sparkle uses for update ordering.
+
+---
+
 ## Release Process
 
 Releases are built and signed **locally** using `Scripts/release.sh`. There is no CI release workflow — it was removed in April 2026 because it was slower than local builds and introduced signing bugs (missing entitlements, Sparkle signature mismatches).
