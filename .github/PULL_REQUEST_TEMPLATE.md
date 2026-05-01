@@ -25,6 +25,9 @@ Fixes #
 ## How to test locally
 
 ```bash
+# 0. Navigate to your local clone of this repo
+cd ~/Documents/Cursor/Open\ Emu   # adjust if your clone is elsewhere
+
 # 1. Check out this PR
 gh pr checkout <PR_NUMBER> --repo nickybmon/OpenEmu-Silicon
 
