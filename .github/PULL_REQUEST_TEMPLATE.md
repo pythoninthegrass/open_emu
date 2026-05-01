@@ -39,12 +39,20 @@ xcodebuild \
   -destination 'platform=macOS,arch=arm64' \
   build 2>&1 | tail -20
 
-# 3. If this PR touches a core (Flycast, etc.), install the rebuilt binary:
-#    cp -f ~/Library/Developer/Xcode/DerivedData/OpenEmu-metal-*/Build/Products/Debug/<CoreName>.oecoreplugin/Contents/MacOS/<CoreName> \
+# 3. Resolve the exact build products dir for this workspace (avoids matching other worktrees)
+BUILD_PRODUCTS=$(xcodebuild \
+  -workspace OpenEmu-metal.xcworkspace \
+  -scheme OpenEmu \
+  -configuration Debug \
+  -showBuildSettings 2>/dev/null \
+  | awk '/^\s+BUILT_PRODUCTS_DIR/{print $3; exit}')
+
+# 4. If this PR touches a core (Flycast, etc.), install the rebuilt binary:
+#    cp -f "$BUILD_PRODUCTS/<CoreName>.oecoreplugin/Contents/MacOS/<CoreName>" \
 #      ~/Library/Application\ Support/OpenEmu/Cores/<CoreName>.oecoreplugin/Contents/MacOS/<CoreName>
 
-# 4. Launch
-open ~/Library/Developer/Xcode/DerivedData/OpenEmu-*/Build/Products/Debug/OpenEmu.app
+# 5. Launch
+open "$BUILD_PRODUCTS/OpenEmu.app"
 ```
 
 <!-- Replace <PR_NUMBER> with this PR's number. Add any PR-specific setup steps here (e.g. BIOS files needed, permissions to revoke first, specific ROM to test with). -->
