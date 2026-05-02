@@ -44,6 +44,8 @@ Only escalate to "please test this in a real game session" when the change is ge
 1. **DerivedData is silently shadowed by the installed core** in `~/Library/Application Support/OpenEmu/Cores/<Name>.oecoreplugin`. After building a core, you must reinstall the plugin or you're testing the old code.
 2. **Never use `cp -R` or `cp -Rf` to install a core plugin.** macOS merges bundle directories rather than replacing them — old files silently stay in place. Always use `Scripts/install-core.sh <CoreName>`, which quits OpenEmu first and copies binary + Info.plist correctly. `verify.sh --core <Name>` does this for you.
 
+**If you (or the user) are working in a git worktree:** use `Scripts/build-for-worktree.sh` (or `verify.sh --worktree`, which auto-detects worktrees) instead of plain xcodebuild. macOS binds privacy permissions to the app's path, and Xcode's default DerivedData uses a different hash per worktree — so a fresh build means re-granting Input Monitoring etc. from scratch every time. The stable per-branch path under `~/Builds/openemu/<branch>/` keeps permissions persistent. See `docs/worktree-workflow.md` for the full workflow including the cores-are-shared gotcha.
+
 ---
 
 ## Autonomy — run things yourself
