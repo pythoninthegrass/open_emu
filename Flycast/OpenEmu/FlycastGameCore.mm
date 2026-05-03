@@ -48,6 +48,7 @@
 #include "wsi/osx.h"
 
 #include <OpenGL/gl3.h>
+#include <mach/mach_time.h>
 #include <sys/stat.h>
 
 #define SAMPLERATE 44100
@@ -58,33 +59,66 @@
 // Custom AudioBackend that writes samples to OpenEmu's ring buffer
 class OpenEmuAudioBackend : public AudioBackend
 {
+    mach_timebase_info_data_t _tb;
+    uint64_t _nextPushTime = 0;
+    uint64_t _frameAheadTicks = 0; // one NTSC frame of lookahead in mach ticks
+
 public:
     OpenEmuAudioBackend() : AudioBackend("openemu", "OpenEmu") {}
 
-    bool init() override { return true; }
+    bool init() override {
+        mach_timebase_info(&_tb);
+        _nextPushTime = 0;
+        // Allow SH4 to run up to two NTSC frames (~33.4ms) ahead of real time
+        // before sleeping. Two frames gives SH4 enough runway to complete a full
+        // PVR render cycle and signal the render thread before the 60ms timeout
+        // fires, fixing video slowdown and maple-bus polling gaps (#202).
+        _frameAheadTicks = (uint64_t)NSEC_PER_SEC / 60 * 2 * _tb.denom / _tb.numer;
+        return true;
+    }
 
     u32 push(const void *data, u32 frames, bool wait) override
     {
         if (!_current) return frames;
 
-        OERingBuffer *buf = [_current audioBufferAtIndex:0];
-        NSUInteger byteCount = frames * 4; // stereo s16 = 4 bytes per frame
-
         if (wait) {
-            // Block until there's room in the ring buffer. This is the primary
-            // real-time throttle: config::LimitFPS is constexpr true, so push()
-            // is always called with wait=true. Spinning here paces the SH4 thread
-            // to OE's audio consumption rate, fixing games running too fast (#202).
-            // 200 × 100µs = 20ms max (one PAL frame), preventing infinite spin if
-            // the emulator stops while the SH4 thread is mid-flight.
-            for (int i = 0; i < 200 && _current && [buf freeBytes] < byteCount; i++)
-                usleep(100);
+            // Wall-clock throttle: pace the SH4 thread to real time using
+            // mach_absolute_time rather than ring-buffer drain rate. The
+            // previous ring-buffer approach (#203) ran ~8.8% fast on 48 kHz
+            // hosts because CoreAudio drained the buffer faster than the
+            // 44100 Hz math assumed (#202).
+            //
+            // Advance the deadline first, then sleep only if SH4 is more than
+            // one NTSC frame ahead of real time. This gives VBlank a full
+            // ~16.7ms window to fire before we block the SH4 thread.
+            uint64_t batchNanos = (uint64_t)frames * NSEC_PER_SEC / SAMPLERATE;
+            uint64_t batchTicks = batchNanos * _tb.denom / _tb.numer;
+
+            uint64_t now = mach_absolute_time();
+
+            // Reset after pauses, save-state loads, or the very first push.
+            // 60ms slack = three PAL frames; matches the wider 2-frame lookahead
+            // window so a brief CPU hiccup doesn't trigger a spurious clock reset.
+            uint64_t maxSlipTicks = (uint64_t)(60 * NSEC_PER_MSEC) * _tb.denom / _tb.numer;
+            if (_nextPushTime == 0 || now > _nextPushTime + maxSlipTicks)
+                _nextPushTime = now;
+
+            _nextPushTime += batchTicks;
+
+            // Only sleep when SH4 is more than one NTSC frame ahead.
+            if (_nextPushTime > now + _frameAheadTicks) {
+                uint64_t sleepTicks = _nextPushTime - (now + _frameAheadTicks);
+                uint64_t sleepNanos = sleepTicks * _tb.numer / _tb.denom;
+                usleep((useconds_t)(sleepNanos / 1000));
+            }
         }
-        [buf write:(const uint8_t *)data maxLength:byteCount];
+
+        OERingBuffer *buf = [_current audioBufferAtIndex:0];
+        [buf write:(const uint8_t *)data maxLength:(NSUInteger)(frames * 4)];
         return frames;
     }
 
-    void term() override {}
+    void term() override { _nextPushTime = 0; }
 };
 
 static OpenEmuAudioBackend openEmuAudioBackend;
@@ -150,7 +184,9 @@ __weak FlycastGameCore *_current;
 
     config::RendererType = RenderType::OpenGL;
     config::AudioBackend.set("openemu");
-    config::DynarecEnabled.override(false); // interpreter — JIT has stability issues on ARM64 macOS
+    // JIT was previously disabled due to a race under non-threaded rendering (#46cdc996).
+    // Threaded rendering is always active in this build so that race does not apply.
+    config::DynarecEnabled.override(true);
 
     if (!addrspace::reserve()) {
         NSLog(@"[Flycast] Failed to reserve Dreamcast address space");
@@ -212,7 +248,7 @@ __weak FlycastGameCore *_current;
             theGLContext.init();
             emu.loadGame(_romPath.fileSystemRepresentation);
             // loadGame calls reset()+load() which clears all settings — re-apply after it returns.
-            config::DynarecEnabled.override(false); // keep interpreter; JIT unstable on ARM64 macOS
+            config::DynarecEnabled.override(true);  // JIT race was non-threaded-rendering only; threaded is always active
             config::AudioBackend.set("openemu");    // reset() clears this to "auto"; restore before InitAudio()
             // loadGameSpecificSettings() runs load(true) which can flip UseReios=false from a per-game
             // config. Without HLE BIOS the VBL-driven GD-ROM server is inert and games freeze on a
