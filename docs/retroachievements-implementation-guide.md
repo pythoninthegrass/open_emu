@@ -95,6 +95,26 @@ The fix is `memcpy` with no address manipulation, as shown above.
 
 ### Pitfall #2 — See byte-swapping section above.
 
+### Pitfall #3 — PSX scratchpad not served (achievments silently deactivated)
+
+**Symptoms:** `N-1/N achievements active` at load (one short). Any achievement that reads scratchpad RAM is silently deactivated.
+
+**Root cause:** rcheevos maps PSX scratchpad (CPU address 0x1F800000, 1 KB) to the achievement address range 0x200000–0x2003FF. If `rc_read_memory` returns early at `address >= 0x200000`, every memref in that range fails validation and its achievement is deactivated.
+
+**Fix:** In the PSX branch of `rc_read_memory`, serve addresses 0x200000–0x2003FF from `MDFN_IEN_PSX::CPU->GetScratchRAMData()`. Guard with a null check on `CPU` in case a read arrives before the core is fully started.
+
+**Fixed in:** Mednafen (PR #347).
+
+### Pitfall #4 — Module name and system identifier diverge for PCE-CD
+
+**Symptoms:** All PCE-CD achievements broken. rcheevos identifies the wrong game (or none). Memory reads use the wrong layout.
+
+**Root cause:** Mednafen uses the same module name (`"pce"`) for both PC Engine HuCard and PC Engine CD-ROM². The `_mednafenCoreModule` ivar is therefore `"pce"` for both. Any code that checks `_mednafenCoreModule == "pcecd"` to detect PCE-CD will never match, so console detection falls through to `RC_CONSOLE_PC_ENGINE` and the extended CD-ROM memory map is never served.
+
+**Fix:** Use `self.systemIdentifier` (which correctly returns `"openemu.system.pcecd"` for disc-based PCE games) to detect PCE-CD. Store the result in a dedicated `_isSystemPCECD` BOOL ivar at load time, and use it in both console detection and `rc_read_memory` dispatch. The PCE-CD console check must appear **before** the plain PCE check in the detection chain.
+
+**Fixed in:** Mednafen (PR #347).
+
 ---
 
 ## Checklist for a new rc_client integration
