@@ -1,16 +1,25 @@
 # Libretro Bridge — Contributor Guide
 
-_Last updated: 2026-04-16_
+_Last updated: 2026-05-04_
 
 This document governs how nickybmon and pystIC divide work on the libretro bridge without creating merge conflicts. Read it before starting any bridge work.
+
+### What shipped in feat/libretro-bridge (May 2026)
+
+- **System-centric Cores prefs UI** — `PrefCoresController` rewritten. One row per system, core picker dropdown, closes #237 (system-level half).
+- **RetroArch local core discovery** — scanner reads `~/Library/Application Support/RetroArch/cores/` and `info/` at startup, surfaces discovered cores in the Select Core picker, auto-creates `.oecoreplugin` wrappers on selection.
+- **OEArcadeSystemResponderClient** — arcade input support added to `OELibretroCoreTranslator` (FBA CPS-2 tested and working).
+- **Confirmed hw_render blocker** — Flycast and Dolphin (RetroArch) crash on launch; tracked in #221 and #348.
 
 ---
 
 ## 1. Purpose and Scope
 
-The libretro bridge is the layer that lets OpenEmu-Silicon load standard libretro `.dylib` cores without building each one from source. It lives on the `feat/libretro-bridge` integration branch until all validation phases complete, then merges to `main` in one shot.
+The libretro bridge is the layer that lets OpenEmu-Silicon load standard libretro `.dylib` cores without building each one from source.
 
-Phase 1 (Gambatte — Game Boy) is complete and merged into `feat/libretro-bridge`. Phase 2 (Flycast — Dreamcast) is in PR review. Phase 3 (VICE — Commodore 64) is scaffolded. This doc covers the remaining work to get all three phases production-ready and merged.
+**As of May 2026, `feat/libretro-bridge` is being retired.** PR #350 merges the integration branch into `main`. All future bridge work branches directly from `main` and PRs to `main` — there is no longer a separate integration branch.
+
+Phase 1 (Gambatte — Game Boy) is complete. Phase 2 (Flycast — Dreamcast) is validated (hw_render blocker documented). Phase 3 (VICE — Commodore 64) is scaffolded. Remaining work ships as individual PRs to `main`.
 
 ---
 
@@ -18,11 +27,10 @@ Phase 1 (Gambatte — Game Boy) is complete and merged into `feat/libretro-bridg
 
 | Rule | Detail |
 |------|--------|
-| Always branch from `feat/libretro-bridge` | Not `main` — the bridge adds SDK types and the translator; branching from `main` misses them |
-| Branch naming | `feat/libretro-bridge-[system]` or `fix/bridge-[description]` |
-| PRs always target `feat/libretro-bridge` | Never open a bridge PR directly to `main` |
-| `feat/libretro-bridge` → `main` | Single merge by nickybmon when all phases validate |
-| Rebase before starting new work | `git fetch origin && git rebase origin/feat/libretro-bridge` — keep your branch current |
+| Always branch from `main` | `feat/libretro-bridge` is retired after PR #350 merges |
+| Branch naming | `feat/bridge-[description]` or `fix/bridge-[description]` |
+| PRs target `main` | Direct to main — no integration branch |
+| Rebase before starting new work | `git fetch origin && git rebase origin/main` |
 
 ---
 
