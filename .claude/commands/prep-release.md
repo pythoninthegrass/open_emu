@@ -49,7 +49,13 @@ sed -i '' 's/MARKETING_VERSION = OLD;/MARKETING_VERSION = NEW;/g' \
   "OpenEmu/OpenEmu.xcodeproj/project.pbxproj"
 ```
 
-Verify by grepping both files and reporting the new values.
+**`SECURITY.md`** — update the supported versions table so the new version is listed as supported and the old "latest" row is replaced:
+```bash
+sed -i '' "s/| [0-9][0-9.]* (latest) | ✅ |/| NEW_VERSION (latest) | ✅ |/" SECURITY.md
+sed -i '' "s/| < [0-9][0-9.]* | ❌ |/| < NEW_VERSION | ❌ |/" SECURITY.md
+```
+
+Verify by grepping all three files and reporting the new values.
 
 ## Step 4 — Auto-draft release notes from git history
 
@@ -104,7 +110,7 @@ If the build fails, stop and report the errors. Do not continue.
 This is a config/docs-only change and qualifies for a direct commit to main.
 
 ```bash
-git add OpenEmu/OpenEmu-Info.plist OpenEmu/OpenEmu.xcodeproj/project.pbxproj Releases/notes-VERSION.md
+git add OpenEmu/OpenEmu-Info.plist OpenEmu/OpenEmu.xcodeproj/project.pbxproj Releases/notes-VERSION.md SECURITY.md
 git commit -m "chore: bump version to VERSION (build BUILD)
 
 Add release notes for VERSION."
@@ -136,10 +142,11 @@ The script will:
 1. Archive the app (Release config, Developer ID signed, hardened runtime)
 2. Re-sign all binaries, notarize with Apple, staple the ticket
 3. Create a DMG from the stapled `.app`
-4. Run `sign_update` to get the EdDSA signature
-5. Prepend a new entry to `appcast.xml` with the correct signature and length
-6. Create a **draft** GitHub Release and upload the DMG
-7. Commit and push the updated `appcast.xml`
+4. Update `Casks/openemu-silicon.rb` with the new version and DMG SHA256
+5. Run `sign_update` to get the EdDSA signature
+6. Prepend a new entry to `appcast.xml` with the correct signature and length
+7. Create a **draft** GitHub Release and upload the DMG
+8. Commit and push the updated `appcast.xml` and Homebrew cask together
 
 ## Step 9 — Report and hand off
 

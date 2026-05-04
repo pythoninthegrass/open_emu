@@ -32,38 +32,102 @@ struct ScreenScraperResult {
     var gameDescription: String?
 }
 
+enum ScreenScraperFetchError: Error, Equatable {
+    case networkUnavailable(String)
+    case badCredentials
+    case rateLimited
+    case notFound
+    case invalidResponse
+}
+
+extension ScreenScraperFetchError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .networkUnavailable(let detail):
+            return "Could not reach ScreenScraper — check your connection. (\(detail))"
+        case .badCredentials:
+            return "ScreenScraper rejected your credentials. Check your username and password in Preferences → Cover Art."
+        case .rateLimited:
+            return "ScreenScraper rate limit reached. Try again later."
+        case .notFound:
+            return nil  // Not an error worth surfacing — ROM simply isn't in the database
+        case .invalidResponse:
+            return "ScreenScraper returned an unexpected response."
+        }
+    }
+}
+
 final class ScreenScraperClient {
 
     static let shared = ScreenScraperClient()
 
+    /// The error from the most recent fetch, if any. Nil on success or .notFound.
+    /// Updated on every call to fetchGameInfo. Thread-safe via main-queue dispatch.
+    @MainActor private(set) var lastFetchError: ScreenScraperFetchError?
+
     // ScreenScraper numeric system IDs keyed by OpenEmu system identifier
     static let systemIDs: [String: Int] = [
+        // Nintendo
         "openemu.system.nes":           3,
+        "openemu.system.fds":         106,   // Famicom Disk System
         "openemu.system.snes":          4,
         "openemu.system.n64":          14,
+        "openemu.system.gc":           13,   // GameCube
+        "openemu.system.wii":          38,
         "openemu.system.gb":            9,   // Game Boy (also covers GBC — no separate GBC plugin)
         "openemu.system.gba":          12,
         "openemu.system.nds":          15,
-        "openemu.system.gg":           21,
+        "openemu.system.vb":           11,   // Virtual Boy
+        "openemu.system.pokemonmini": 211,
+
+        // Sony
+        "openemu.system.psx":          57,
+        "openemu.system.ps2":          58,
+        "openemu.system.psp":          61,
+
+        // Sega
+        "openemu.system.sg":            1,   // Mega Drive / Genesis
+        "openemu.system.sg1000":       32,   // Sega SG-1000
         "openemu.system.sms":           2,
-        "openemu.system.sg":            1,
+        "openemu.system.gg":           21,
         "openemu.system.scd":          20,
         "openemu.system.32x":          19,
-        "openemu.system.psx":          57,
         "openemu.system.saturn":       22,
         "openemu.system.dc":           23,
+
+        // Atari
         "openemu.system.2600":         26,
         "openemu.system.5200":         40,
         "openemu.system.7800":         41,
         "openemu.system.jaguar":       27,
-        "openemu.system.msx":         113,
+        "openemu.system.lynx":         28,
+        "openemu.system.atari8bit":    43,
+
+        // NEC
+        "openemu.system.pce":          31,   // PC Engine / TurboGrafx-16
+        "openemu.system.pcecd":       114,   // PC Engine CD-ROM
+        "openemu.system.pcfx":         72,
+
+        // SNK
+        "openemu.system.ngp":          82,   // Neo Geo Pocket / Color
+
+        // Bandai
+        "openemu.system.ws":           45,   // WonderSwan / WonderSwan Color
+
+        // Other home consoles
+        "openemu.system.3do":          29,
         "openemu.system.colecovision": 48,
         "openemu.system.intellivision": 115,
         "openemu.system.odyssey2":    104,
         "openemu.system.vectrex":     102,
-        "openemu.system.pokemonmini": 211,
-        "openemu.system.arcade":       75,
+        "openemu.system.sv":           24,   // Watara Supervision
+
+        // Computer / MSX
+        "openemu.system.msx":         113,
         "openemu.system.c64":          64,
+
+        // Arcade
+        "openemu.system.arcade":       75,
     ]
 
     // Preferred region tags in priority order, per OELocalizationHelper region
@@ -82,13 +146,16 @@ final class ScreenScraperClient {
     }
 
     /// Synchronous fetch suitable for calling from a background DispatchQueue.sync block.
-    /// Returns nil silently on error (network unavailable, rate-limited, not found, etc.)
+    ///
+    /// Returns `.success(nil)` when the ROM was not found (not an error).
+    /// Returns `.failure` for network errors, bad credentials, rate limiting, etc.
+    /// Also writes to `lastFetchError` (main actor) for UI display.
     ///
     /// Pass `debugMode: true` to attach the developer debug password (100 uses/day limit).
-    func fetchGameInfo(md5: String?, romName: String?, systemIdentifier: String, debugMode: Bool = false) -> ScreenScraperResult? {
+    func fetchGameInfo(md5: String?, romName: String?, systemIdentifier: String, debugMode: Bool = false) -> Result<ScreenScraperResult?, ScreenScraperFetchError> {
 
         guard let systemID = ScreenScraperClient.systemIDs[systemIdentifier] else {
-            return nil
+            return .success(nil)
         }
 
         var components = URLComponents(string: "https://www.screenscraper.fr/api2/jeuInfos.php")!
@@ -104,7 +171,7 @@ final class ScreenScraperClient {
         // ScreenScraper requires romnom; rommd5 is additive for accuracy.
         // Sending both when available gives the best match rate.
         guard (md5 != nil && !(md5!.isEmpty)) || (romName != nil && !(romName!.isEmpty)) else {
-            return nil
+            return .success(nil)
         }
         if let md5 = md5, !md5.isEmpty {
             queryItems.append(URLQueryItem(name: "rommd5", value: md5.uppercased()))
@@ -131,9 +198,9 @@ final class ScreenScraperClient {
 
         components.queryItems = queryItems
 
-        guard let url = components.url else { return nil }
+        guard let url = components.url else { return .success(nil) }
 
-        var result: ScreenScraperResult?
+        var fetchResult: Result<ScreenScraperResult?, ScreenScraperFetchError> = .success(nil)
         let semaphore = DispatchSemaphore(value: 0)
 
         let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
@@ -142,28 +209,58 @@ final class ScreenScraperClient {
             guard let self = self else { return }
 
             if let error = error {
-                os_log(.debug, log: .default, "ScreenScraper network error: %{public}@", error.localizedDescription)
+                let detail = error.localizedDescription
+                os_log(.error, log: .default, "ScreenScraper network error: %{public}@", detail)
+                let ssError = ScreenScraperFetchError.networkUnavailable(detail)
+                fetchResult = .failure(ssError)
+                Task { @MainActor in self.lastFetchError = ssError }
                 return
             }
 
             if let http = response as? HTTPURLResponse {
-                // 430 = rate limited; 404 = not found — both are silent no-ops
-                guard (200..<300).contains(http.statusCode) else { return }
+                switch http.statusCode {
+                case 200..<300:
+                    break
+                case 401, 403:
+                    os_log(.error, log: .default, "ScreenScraper auth error: HTTP %d", http.statusCode)
+                    fetchResult = .failure(.badCredentials)
+                    Task { @MainActor in self.lastFetchError = .badCredentials }
+                    return
+                case 404:
+                    fetchResult = .success(nil)
+                    Task { @MainActor in self.lastFetchError = nil }
+                    return
+                case 430:
+                    os_log(.error, log: .default, "ScreenScraper rate limited (HTTP 430)")
+                    fetchResult = .failure(.rateLimited)
+                    Task { @MainActor in self.lastFetchError = .rateLimited }
+                    return
+                default:
+                    os_log(.error, log: .default, "ScreenScraper unexpected HTTP %d", http.statusCode)
+                    fetchResult = .failure(.invalidResponse)
+                    Task { @MainActor in self.lastFetchError = .invalidResponse }
+                    return
+                }
             }
 
             guard let data = data,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let response = json["response"] as? [String: Any],
                   let jeu = response["jeu"] as? [String: Any] else {
+                os_log(.error, log: .default, "ScreenScraper returned unparseable response")
+                fetchResult = .failure(.invalidResponse)
+                Task { @MainActor in self.lastFetchError = .invalidResponse }
                 return
             }
 
-            result = self.parseGameInfo(jeu: jeu)
+            let parsed = self.parseGameInfo(jeu: jeu)
+            fetchResult = .success(parsed)
+            Task { @MainActor in self.lastFetchError = nil }
         }
 
         task.resume()
         semaphore.wait()
-        return result
+        return fetchResult
     }
 
     // MARK: - JSON Parsing

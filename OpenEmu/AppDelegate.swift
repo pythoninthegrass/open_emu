@@ -27,6 +27,7 @@
 import Cocoa
 import OpenEmuSystem
 import OpenEmuKit
+import UserNotifications
 
 private var appearancePrefChangedKVOContext = 0
 
@@ -37,7 +38,7 @@ extension OEDBRom: CachedLastPlayedInfoItem {}
 @NSApplicationMain
 @objc(OEApplicationDelegate)
 @objcMembers
-class AppDelegate: NSObject {
+class AppDelegate: NSObject, UNUserNotificationCenterDelegate {
     
     static let websiteAddress = "https://github.com/nickybmon/OpenEmu-Silicon"
     static let userGuideAddress = "https://github.com/nickybmon/OpenEmu-Silicon/wiki"
@@ -487,6 +488,16 @@ class AppDelegate: NSObject {
         _ = OEBindingsController.self
         let dm = OEDeviceManager.shared
         if #available(macOS 10.15, *) {
+            #if DEBUG
+            // In debug builds, always call requestAccess() regardless of what
+            // IOHIDCheckAccess reports. IOHIDCheckAccess may return .granted based
+            // on the production app's TCC bundle-ID entry, causing the switch below
+            // to hit default:break — but macOS HID event delivery is gated on the
+            // specific binary being registered, so the debug binary never receives
+            // events. IOHIDRequestAccess is idempotent when permission is already
+            // granted (returns true, no dialog), so this is safe to call every launch.
+            dm.requestAccess()
+            #else
             switch dm.accessType {
             case .unknown:
                 // TCC may return "unknown" on subsequent launches when the app lacks a
@@ -509,8 +520,14 @@ class AppDelegate: NSObject {
                 }
 
             default:
-                break
+                // Permission already granted. Call requestAccess() anyway — it is idempotent
+                // (returns true, no dialog) but ensures HID event delivery is active for this
+                // binary. IOHIDCheckAccess returning .granted does not activate delivery; that
+                // requires IOHIDRequestAccess to be called. Same reason the DEBUG path always
+                // calls it unconditionally.
+                _ = dm.requestAccess()
             }
+            #endif
             // Re-enumerate keyboards in case permission was granted after init.
             dm.rescanKeyboardDevices()
         }
@@ -619,12 +636,6 @@ class AppDelegate: NSObject {
     
     @IBAction func showPreferencesWindow(_ sender: AnyObject?) {
         preferencesWindowController.showWindow(nil)
-    }
-    
-    // MARK: - Donation Link
-    
-    @IBAction func showDonationPage(_ sender: AnyObject?) {
-        NSWorkspace.shared.open(URL(string: "http://openemu.org/donate/")!)
     }
     
     // MARK: - KVO
@@ -887,7 +898,10 @@ extension AppDelegate: NSMenuDelegate {
         notificationCenter.addObserver(self, selector: #selector(openPreferencePane), name: PreferencesWindowController.openPaneNotificationName, object: nil)
         
         NSDocumentController.shared.clearRecentDocuments(nil)
-        
+
+        UNUserNotificationCenter.current().delegate = self
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+
         validateDefaultPluginAssignments()
         
         DispatchQueue.main.async {
@@ -1147,5 +1161,15 @@ extension AppDelegate: NSMenuDelegate {
         } else {
             block()
         }
+    }
+
+    // MARK: - UNUserNotificationCenterDelegate
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                 willPresent notification: UNNotification,
+                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // macOS suppresses banners for foreground apps by default; opt back in so
+        // achievement notifications pop up while a game is running.
+        completionHandler([.banner, .sound])
     }
 }

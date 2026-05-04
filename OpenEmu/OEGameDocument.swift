@@ -27,6 +27,7 @@ import IOKit.pwr_mgt
 import OpenEmuBase
 import OpenEmuSystem
 import OpenEmuKit
+import UserNotifications
 
 let OEGameVolumeKey = "volume"
 let OEGameCoreDisplayModeKeyFormat = "displayMode.%@"
@@ -146,7 +147,8 @@ final class OEGameDocument: NSDocument {
     private(set) var displayModes: [[String: Any]] = []
     
     private var gameCoreManager: GameCoreManager?
-    
+    private var raCredentialObserver: Any?
+
     private var displaySleepAssertionID: IOPMAssertionID = 0
     
     private var emulationStatus: EmulationStatus = .notSetup
@@ -570,6 +572,11 @@ final class OEGameDocument: NSDocument {
                 SentryService.clearGameContext()
                 OEBindingsController.default.systemBindings(for: self.systemPlugin.controller).remove(self)
 
+                if let observer = self.raCredentialObserver {
+                    NotificationCenter.default.removeObserver(observer)
+                    self.raCredentialObserver = nil
+                }
+
                 self.emulationStatus = .notSetup
                 
                 self.gameCoreManager = nil
@@ -641,7 +648,26 @@ final class OEGameDocument: NSDocument {
                 
                 self.gameCoreManager?.setHandleEvents(self.handleEvents)
                 self.gameCoreManager?.setHandleKeyboardEvents(self.handleKeyboardEvents)
-                
+
+                // Pass stored RA credentials so the core can log in at launch
+                let raUsername = UserDefaults.standard.string(forKey: "RAUsername")
+                let raToken    = RetroAchievementsCredentials.storedToken()
+                if let username = raUsername, let token = raToken {
+                    self.gameCoreManager?.setRetroAchievementsToken(token, username: username)
+                }
+
+                // Forward mid-session credential changes (e.g. user signs in while a game is running)
+                self.raCredentialObserver = NotificationCenter.default.addObserver(
+                    forName: .OERACredentialsDidChange,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] note in
+                    guard let self = self else { return }
+                    let token    = note.userInfo?[RACredentialsTokenKey]    as? String
+                    let username = note.userInfo?[RACredentialsUsernameKey] as? String
+                    self.gameCoreManager?.setRetroAchievementsToken(token, username: username)
+                }
+
                 handler(true, nil)
             }
         }, errorHandler: { error in
@@ -1014,6 +1040,7 @@ final class OEGameDocument: NSDocument {
         emulationStatus = .starting
         gameCoreManager?.startEmulation() {
             self.emulationStatus = .playing
+            self.cheats.filter(\.isEnabled).forEach { self.setCheat($0) }
         }
         
         gameViewController.reflectEmulationPaused(false)
@@ -1308,7 +1335,34 @@ final class OEGameDocument: NSDocument {
         if supportsCheats,
            let md5Hash = rom.md5Hash {
             let cheatsXML = Cheats(md5Hash: md5Hash)
-            cheats = cheatsXML.allCheats
+            cheats = cheatsXML.allCheats + loadUserCheats()
+        }
+    }
+
+    // MARK: - User Cheat Persistence
+
+    private var userCheatsFileURL: URL? {
+        guard let md5 = rom.md5Hash,
+              let base = OELibraryDatabase.default?.databaseFolderURL
+        else { return nil }
+        let dir = base.appendingPathComponent("Cheats", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("\(md5).json")
+    }
+
+    private func loadUserCheats() -> [Cheat] {
+        guard let url = userCheatsFileURL,
+              let data = try? Data(contentsOf: url),
+              let saved = try? JSONDecoder().decode([Cheat].self, from: data)
+        else { return [] }
+        return saved
+    }
+
+    private func saveUserCheats() {
+        guard let url = userCheatsFileURL else { return }
+        let userCheats = cheats.filter(\.isUserAdded)
+        if let data = try? JSONEncoder().encode(userCheats) {
+            try? data.write(to: url, options: .atomic)
         }
     }
     
@@ -1332,15 +1386,16 @@ final class OEGameDocument: NSDocument {
         alert.inputLimit = 1000
         
         if alert.runModal() == .alertFirstButtonReturn {
-            let cheat = Cheat(code: alert.stringValue, type: "Unknown", name: alert.otherStringValue)
-            
+            let cheat = Cheat(code: alert.stringValue, type: "GameShark", name: alert.otherStringValue)
+            cheat.isUserAdded = true
+
             if alert.suppressionButtonState {
                 cheat.isEnabled = true
                 setCheat(cheat)
             }
-            
-            //TODO: decide how to handle setting a cheat type from the modal and save added cheats to file
+
             cheats.append(cheat)
+            saveUserCheats()
         }
     }
     
@@ -1348,9 +1403,10 @@ final class OEGameDocument: NSDocument {
     @IBAction func toggleCheat(_ sender: AnyObject) {
         guard let cheat = sender.representedObject as? Cheat
         else { return }
-        
+
         cheat.isEnabled.toggle()
         setCheat(cheat)
+        if cheat.isUserAdded { saveUserCheats() }
     }
     
     func setCheat(_ cheat: Cheat) {
@@ -1787,7 +1843,24 @@ final class OEGameDocument: NSDocument {
         }
         
         if coreIdentifier == state.coreIdentifier {
-            loadState()
+            // Same core — guard against version mismatch before loading.
+            // Save states are raw memory dumps; loading one created on a different
+            // core version can corrupt internal state and crash the helper process.
+            if let savedVersion = state.coreVersion,
+               !savedVersion.isEmpty,
+               savedVersion != corePlugin.version {
+                let alert = OEAlert.coreVersionMismatch(
+                    coreName: corePlugin.displayName,
+                    savedVersion: savedVersion,
+                    installedVersion: corePlugin.version)
+                if alert.runModal() == .alertFirstButtonReturn {
+                    loadState()
+                } else {
+                    startEmulation()
+                }
+            } else {
+                loadState()
+            }
             return
         }
         
@@ -2019,6 +2092,26 @@ extension OEGameDocument: OESystemBindingsObserver {
         }
         coreDidTerminateSuddenly = true
         stopEmulation(self)
+    }
+
+    func achievementUnlocked(id: UInt32, title: String, description: String, badgeURL: String, points: UInt32) {
+        DispatchQueue.main.async {
+            // In-app banner — always visible regardless of Focus mode or notification settings
+            self.gameViewController?.showAchievementUnlocked(title: title, points: points)
+
+            // macOS system notification — timeSensitive breaks through Focus/DND
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body  = description
+            content.sound = .default
+
+            let request = UNNotificationRequest(
+                identifier: "ra.achievement.\(id)",
+                content: content,
+                trigger: nil
+            )
+            UNUserNotificationCenter.current().add(request)
+        }
     }
 }
 

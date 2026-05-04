@@ -25,16 +25,44 @@
 import Cocoa
 
 final class BackgroundImageView: NSView {
-    
+
     @IBInspectable var background: NSImage?
     @IBInspectable var image: NSImage?
-    
+
+    // After IB wires up IBInspectable properties: use image drawing when images
+    // are set (Controls panel wood texture), frosted glass otherwise (setup assistant).
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        if background == nil && image == nil {
+            setupFrostedGlass()
+        }
+    }
+
+    private func setupFrostedGlass() {
+        wantsLayer = true
+        layer?.cornerRadius = 12
+        layer?.cornerCurve = .continuous
+        layer?.masksToBounds = true
+
+        let fx = NSVisualEffectView()
+        fx.material = .hudWindow
+        fx.blendingMode = .withinWindow
+        fx.state = .active
+        fx.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(fx, positioned: .below, relativeTo: nil)
+
+        NSLayoutConstraint.activate([
+            fx.leadingAnchor.constraint(equalTo: leadingAnchor),
+            fx.trailingAnchor.constraint(equalTo: trailingAnchor),
+            fx.topAnchor.constraint(equalTo: topAnchor),
+            fx.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         background?.draw(in: dirtyRect, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: isFlipped, hints: nil)
         image?.draw(in: dirtyRect, from: dirtyRect, operation: .sourceOver, fraction: 1, respectFlipped: isFlipped, hints: nil)
     }
-    
-    override var isFlipped: Bool {
-        return false
-    }
+
+    override var isFlipped: Bool { false }
 }

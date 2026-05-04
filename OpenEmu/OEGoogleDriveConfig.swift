@@ -29,11 +29,12 @@ enum OEGoogleDriveConfig {
     
     // MARK: - OAuth Credentials
     
-    /// Your Google API OAuth 2.0 Client ID.
-    static let clientID     = "YOUR_CLIENT_ID_HERE"
-    
-    /// Your Google API OAuth 2.0 Client Secret.
-    static let clientSecret = "YOUR_CLIENT_SECRET_HERE"
+    // Real credentials live in OEGoogleDriveSecrets.swift (gitignored).
+    // Locally: copy OEGoogleDriveSecrets.template.swift → OEGoogleDriveSecrets.swift and fill in values.
+    // In CI: the release workflow injects GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET secrets.
+    // The properties below are defined in that file; this extension just documents them.
+    // static let clientID: String      — defined in OEGoogleDriveSecrets.swift
+    // static let clientSecret: String  — defined in OEGoogleDriveSecrets.swift
     
     // MARK: - OAuth Endpoints
     
@@ -42,17 +43,18 @@ enum OEGoogleDriveConfig {
     static let redirectURI           = "http://127.0.0.1"
     
     // MARK: - API Scopes
-    
-    /// Requests access to the hidden App Data folder only.
+
+    /// Requests access to the hidden App Data folder only (not visible in Drive UI).
     static let scopes = ["https://www.googleapis.com/auth/drive.appdata"]
-    
+
     // MARK: - API Endpoints
-    
+
     static let driveAPIBaseURL   = "https://www.googleapis.com/drive/v3"
     static let uploadAPIBaseURL  = "https://www.googleapis.com/upload/drive/v3"
-    
+
     // MARK: - App Data Folder
-    
+
+    /// Fixed identifier for the Drive hidden App Data folder.
     static let appDataFolderName = "appDataFolder"
     
     // MARK: - Keychain
