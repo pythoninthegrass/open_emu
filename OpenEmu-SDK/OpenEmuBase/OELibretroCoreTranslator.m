@@ -37,6 +37,7 @@
 #endif
 #import <stdatomic.h>
 
+
 @interface OELibretroCoreTranslator () <OELibretroInputReceiver>
 @property (nonatomic, strong) NSBundle *coreBundle;
 @property (nonatomic, assign) enum retro_pixel_format retroPixelFormat;
@@ -58,6 +59,7 @@
 @property (nonatomic, assign) BOOL isDC;
 @property (nonatomic, assign) BOOL isSaturn;
 @property (nonatomic, assign) BOOL isC64;
+@property (nonatomic, assign) BOOL isArcade;
 @property (nonatomic, assign) retro_keyboard_event_t retroKeyboardEvent;
 @property (nonatomic, assign) BOOL isN64;
 
@@ -1021,6 +1023,7 @@ static void* bridge_dlsym(void *handle, const char *symbol) {
     _isSaturn = [systemID containsString:@"saturn"];
     _isC64    = [systemID containsString:@"c64"];
     _isN64    = [systemID containsString:@"n64"];
+    _isArcade = [systemID containsString:@"arcade"];
     _isHW     = NO;  // Reset — core will re-request via SET_HW_RENDER if needed
 
     // Populate content directory (ROM's parent folder) for RETRO_ENVIRONMENT_GET_CONTENT_DIRECTORY.
@@ -1540,6 +1543,43 @@ static const uint8_t OEC64ButtonToLibretro[] = {
     NSUInteger port = player > 0 ? player - 1 : 0;
     if (port >= 4 || (NSUInteger)button >= sizeof(OEC64ButtonToLibretro)) return;
     uint8_t btn = OEC64ButtonToLibretro[button];
+    if (btn == 0xFF) return;
+    atomic_store_explicit(&_buttonStates[port][btn], 0, memory_order_relaxed);
+}
+
+#pragma mark - OEArcadeSystemResponderClient
+
+// Standard 6-button arcade layout for FBA/MAME libretro cores.
+// Buttons 1-3 are the top row (jab/strong/fierce), 4-6 the bottom (short/forward/roundhouse).
+static const uint8_t OEArcadeButtonToLibretro[] = {
+    RETRO_DEVICE_ID_JOYPAD_UP,     // OEArcadeButtonUp         = 0
+    RETRO_DEVICE_ID_JOYPAD_DOWN,   // OEArcadeButtonDown       = 1
+    RETRO_DEVICE_ID_JOYPAD_LEFT,   // OEArcadeButtonLeft       = 2
+    RETRO_DEVICE_ID_JOYPAD_RIGHT,  // OEArcadeButtonRight      = 3
+    RETRO_DEVICE_ID_JOYPAD_Y,      // OEArcadeButton1 (jab)    = 4
+    RETRO_DEVICE_ID_JOYPAD_X,      // OEArcadeButton2 (strong) = 5
+    RETRO_DEVICE_ID_JOYPAD_L,      // OEArcadeButton3 (fierce) = 6
+    RETRO_DEVICE_ID_JOYPAD_B,      // OEArcadeButton4 (short)  = 7
+    RETRO_DEVICE_ID_JOYPAD_A,      // OEArcadeButton5 (fwd)    = 8
+    RETRO_DEVICE_ID_JOYPAD_R,      // OEArcadeButton6 (rhouse) = 9
+    RETRO_DEVICE_ID_JOYPAD_START,  // OEArcadeButtonP1Start    = 10
+    RETRO_DEVICE_ID_JOYPAD_SELECT, // OEArcadeButtonInsertCoin = 11
+    0xFF,                          // OEArcadeButtonService    = 12
+    0xFF,                          // OEArcadeUIConfigure      = 13
+};
+
+- (oneway void)didPushArcadeButton:(NSInteger)button forPlayer:(NSUInteger)player {
+    NSUInteger port = player > 0 ? player - 1 : 0;
+    if (port >= 4 || (NSUInteger)button >= sizeof(OEArcadeButtonToLibretro)) return;
+    uint8_t btn = OEArcadeButtonToLibretro[button];
+    if (btn == 0xFF) return;
+    atomic_store_explicit(&_buttonStates[port][btn], 1, memory_order_relaxed);
+}
+
+- (oneway void)didReleaseArcadeButton:(NSInteger)button forPlayer:(NSUInteger)player {
+    NSUInteger port = player > 0 ? player - 1 : 0;
+    if (port >= 4 || (NSUInteger)button >= sizeof(OEArcadeButtonToLibretro)) return;
+    uint8_t btn = OEArcadeButtonToLibretro[button];
     if (btn == 0xFF) return;
     atomic_store_explicit(&_buttonStates[port][btn], 0, memory_order_relaxed);
 }
