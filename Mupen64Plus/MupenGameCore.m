@@ -427,7 +427,7 @@ static void MupenSetAudioSpeed(int percent)
         // before M64CMD_EXECUTE sets up g_dev.rdram.dram, returning 0 for every address and
         // deactivating all achievements before the game even starts.
         rc_client_set_allow_background_memory_reads(_rcClient, 0);
-        rc_client_enable_logging(_rcClient, RC_CLIENT_LOG_LEVEL_WARN, mupen_rc_log);
+        rc_client_enable_logging(_rcClient, RC_CLIENT_LOG_LEVEL_INFO, mupen_rc_log);
 
         __weak MupenGameCore *weakSelf = self;
         _raTokenObserver = [[NSNotificationCenter defaultCenter]
@@ -538,6 +538,7 @@ static void MupenSetAudioSpeed(int percent)
 - (void)videoInterrupt
 {
     [self.renderDelegate didRenderFrameOnAlternateThread];
+
     if (_rcClient) {
         rc_client_do_frame(_rcClient);
     }
