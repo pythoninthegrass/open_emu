@@ -52,6 +52,10 @@ Save files synced to Google Drive are stored in a top-level **OpenEmu Saves** fo
 - **Preferences no longer shows duplicate ColecoVision rows.** The Cores tab was resolving system names incorrectly, producing ghost rows for ColecoVision and a few other systems.
 - **FCEU games now render correctly when running from a Release build.** Pixels were not being written to the framebuffer on the execute frame path used by Release and notarised builds, causing a black screen.
 - **Google Drive OAuth now completes correctly.** The redirect URI handler was being called on the wrong thread, causing the sign-in flow to silently stall after the browser handoff.
+- **RetroArch cores are now visible in the core picker and stay visible after selection.** On SNES, Arcade, and C64, selecting a RetroArch (bridge) core caused it to vanish from the picker entirely, making it impossible to reselect. The picker now correctly lists all bridge cores at all times.
+- **"Check for Update" in the core picker now works.** Tapping it previously produced no visible effect. It now fetches the correct appcast for each installed core and shows an update badge when one is available.
+- **Core updates now install automatically on launch.** Installed cores were never auto-updating because the update pipeline was fetching stale upstream appcasts (pointing at x86_64-only binaries) instead of this fork's. The pipeline now uses the correct per-fork appcasts for all cores, and updates install silently in the background without any user action.
+- **Snes9x (RetroArch) no longer crashes on load.** A null pointer was being passed to the core options interface; it now receives an empty string, which the core handles correctly.
 
 ## Core Updates
 
