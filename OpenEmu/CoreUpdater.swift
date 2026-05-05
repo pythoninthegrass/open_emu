@@ -196,12 +196,24 @@ final class CoreUpdater: NSObject {
                     for coreNode in coreNodes {
                         guard
                             let coreID = coreNode.attribute(forName: "id")?.stringValue?.lowercased(),
-                            self.coresDict[coreID] == nil,
                             let coreName = coreNode.attribute(forName: "name")?.stringValue,
                             let systemNodes = try? coreNode.nodes(forXPath: "./systems/system") as? [XMLElement],
                             let appcastURLString = coreNode.attribute(forName: "appcastURL")?.stringValue,
                             let appcastURL = URL(string: appcastURLString)
                         else { continue }
+
+                        // If already installed, refresh its appcast URL from oecores.xml so
+                        // "Check for Update" uses our fork's appcast, not the upstream one.
+                        if let existing = self.coresDict[coreID] {
+                            let appcast = CoreAppcast(url: appcastURL)
+                            appcast.fetch {
+                                DispatchQueue.main.async {
+                                    existing.appcastItem = appcast.items.first { $0.isSupported }
+                                    self.updateCoreList()
+                                }
+                            }
+                            continue
+                        }
                         
                         let download = CoreDownload()
                         download.name = coreName
