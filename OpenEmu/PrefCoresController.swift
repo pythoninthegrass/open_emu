@@ -194,7 +194,7 @@ final class PrefCoresController: NSViewController {
                 systemName: value.name,
                 cores: value.cores.sorted { $0.name < $1.name }
             )
-            entry.retroArchCores = allRetroArch.filter { $0.systemIDs.contains(sysID) }
+            entry.retroArchCores = deduplicatedRetroArchCores(allRetroArch.filter { $0.systemIDs.contains(sysID) })
             return entry
         }
         .sorted { $0.systemName < $1.systemName }
@@ -209,12 +209,27 @@ final class PrefCoresController: NSViewController {
         }
         for (sysID, raCores) in extraMap {
             var entry = SystemEntry(systemIdentifier: sysID, systemName: displayName(for: sysID, fallback: sysID), cores: [])
-            entry.retroArchCores = raCores
+            entry.retroArchCores = deduplicatedRetroArchCores(raCores)
             entries.append(entry)
         }
 
         entries.sort { $0.systemName < $1.systemName }
         tableView.reloadData()
+    }
+
+    private func deduplicatedRetroArchCores(_ cores: [RetroArchCore]) -> [RetroArchCore] {
+        var seen: [String: RetroArchCore] = [:]
+        for core in cores {
+            if let existing = seen[core.displayName] {
+                // Prefer the installed variant over an uninstalled duplicate
+                if core.isPluginInstalled && !existing.isPluginInstalled {
+                    seen[core.displayName] = core
+                }
+            } else {
+                seen[core.displayName] = core
+            }
+        }
+        return seen.values.sorted { $0.displayName < $1.displayName }
     }
 
     private func displayName(for sysID: String, fallback: String) -> String {

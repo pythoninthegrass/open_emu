@@ -202,13 +202,17 @@ final class CoreUpdater: NSObject {
                             let appcastURL = URL(string: appcastURLString)
                         else { continue }
 
-                        // If already installed, refresh its appcast URL from oecores.xml so
-                        // "Check for Update" uses our fork's appcast, not the upstream one.
+                        // If already installed, refresh its appcast from oecores.xml so
+                        // "Check for Update" uses our fork's appcast, not upstream's.
                         if let existing = self.coresDict[coreID] {
                             let appcast = CoreAppcast(url: appcastURL)
                             appcast.fetch {
                                 DispatchQueue.main.async {
-                                    existing.appcastItem = appcast.items.first { $0.isSupported }
+                                    if let item = appcast.items.first(where: { $0.isSupported }),
+                                       SUStandardVersionComparator.default.compareVersion(item.version, toVersion: existing.version) == .orderedDescending {
+                                        existing.appcastItem = item
+                                        existing.hasUpdate = true
+                                    }
                                     self.updateCoreList()
                                 }
                             }
