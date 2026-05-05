@@ -1,5 +1,24 @@
 ## What's New in 1.0.8
 
+### Libretro Bridge — PSP, Arcade, and More (Early Access) ⚡
+
+OpenEmu Silicon now includes a **Libretro Bridge** — a translation layer built by Nick Blackmon and [pystIC](https://github.com/pystIC) that lets you run RetroArch/libretro cores directly inside OpenEmu, without any per-core rewriting or native port work.
+
+This opens up systems that were previously impossible to support in this fork:
+
+- **PSP** via PPSSPP-libretro
+- **Arcade** (MAME, FinalBurn Neo) via their libretro cores
+- **Dreamcast** via Flycast-libretro
+- And many others available through the libretro ecosystem
+
+**How it works:** You download cores through RetroArch as you normally would (or grab them from the libretro buildbot directly). OpenEmu's bridge loads those `.dylib` files and translates between the libretro API and OpenEmu's native core interface — handling input, video, audio, save states, and core options automatically.
+
+This is an **early, experimental release.** It has been tested on a range of systems and works, but some cores will behave better than others, and rough edges remain. Hardware-rendered cores (those requiring OpenGL or Vulkan) are not yet supported — software-rendered cores are the sweet spot right now.
+
+→ **[Full setup guide and supported cores list](https://github.com/nickybmon/OpenEmu-Silicon/wiki/Using-RetroArch-Cores)**
+
+---
+
 ### RetroAchievements — Phase 2 🏆
 
 Two more systems now earn achievements automatically while you play:
