@@ -56,6 +56,10 @@ Save files synced to Google Drive are stored in a top-level **OpenEmu Saves** fo
 - **"Check for Update" in the core picker now works.** Tapping it previously produced no visible effect. It now fetches the correct appcast for each installed core and shows an update badge when one is available.
 - **Core updates now install automatically on launch.** Installed cores were never auto-updating because the update pipeline was fetching stale upstream appcasts (pointing at x86_64-only binaries) instead of this fork's. The pipeline now uses the correct per-fork appcasts for all cores, and updates install silently in the background without any user action.
 - **Snes9x (RetroArch) no longer crashes on load.** A null pointer was being passed to the core options interface; it now receives an empty string, which the core handles correctly.
+- **Multi-core systems no longer silently default to RetroArch.** On SNES, Arcade, and Commodore 64, OpenEmu was quietly picking the RetroArch (bridge) core even when a native core was installed and selected. The native core is now used as expected when chosen.
+- **No more phantom "Update Available" loops on installed cores.** A previous core release advertised new versions in the update feed but shipped the previous binaries, so installs would "succeed" without anything changing — and the app kept offering the same update on every launch. The feed now matches what's actually in each release, and existing installations migrate to the corrected feed automatically on first launch of 1.0.8.
+- **Libretro cores now honour their author-declared default options.** Cores that ship sensible defaults (PPSSPP and others) were having those defaults overridden with empty values until the user explicitly touched each setting. Defaults now take effect immediately.
+- **RetroArch core stubs stay in sync with the bundled libretro bridge.** When the bridge is updated, the per-system stubs that route games to it are auto-refreshed on launch — no reinstall needed.
 
 ## Core Updates
 
