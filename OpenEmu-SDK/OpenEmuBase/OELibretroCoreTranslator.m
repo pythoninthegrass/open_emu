@@ -56,6 +56,8 @@
 #define RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE (47 | 0x10000)
 #endif
 
+NSString * const OELibretroBridgeVersion = @"2";
+
 
 @interface OELibretroCoreTranslator () <OELibretroInputReceiver>
 @property (nonatomic, strong) NSBundle *coreBundle;
@@ -89,6 +91,16 @@
 @property (nonatomic, copy) NSString *biosPath;
 @property (nonatomic, copy) NSString *savesPath;
 @property (nonatomic, copy) NSString *supportPath;
+
+// Defaults the core declared via SET_VARIABLES / SET_CORE_OPTIONS{,_V2,_INTL}.
+// Populated as the core initialises; consulted on every GET_VARIABLE miss
+// before falling back to the empty-string sentinel.
+//
+// Values are stored as NSData with nul-terminated UTF-8 bytes (rather than
+// NSString) so we can hand the core a `const char *` whose lifetime tracks
+// the dictionary entry's. -[NSString UTF8String] is autorelease-pool scoped
+// and would race with the core caching the pointer across calls.
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSData *> *declaredOptionDefaults;
 @end
 
 // C-string copies of the directory paths — allocated via strdup() in init,
@@ -223,6 +235,7 @@ static void libretro_log_cb(enum retro_log_level level, const char *fmt, ...) {
     void (*_retro_set_input_poll)(retro_input_poll_t);
     void (*_retro_set_input_state)(retro_input_state_t);
     void (*_retro_run)(void);
+    void (*_retro_reset)(void);
     bool (*_retro_load_game)(const struct retro_game_info *game);
     void (*_retro_unload_game)(void);
     
@@ -279,6 +292,64 @@ static void libretro_log_cb(enum retro_log_level level, const char *fmt, ...) {
     return version;
 }
 
+#pragma mark - Core option defaults
+
+// Mirror what RetroArch does: when a core declares its options, capture
+// (key, default_value) so we can hand the default back on GET_VARIABLE
+// instead of the empty string. Empty / NULL values are skipped — see the
+// Beetle PSX hang that motivated this whole layer for why "" is unsafe.
+static void OEStoreOptionDefault(NSMutableDictionary<NSString *, NSData *> *dict,
+                                 const char *key, const char *defaultValue, size_t defaultLen) {
+    if (!dict || !key || !defaultValue || defaultLen == 0) return;
+    NSString *k = [NSString stringWithUTF8String:key];
+    if (!k) return;
+    NSMutableData *d = [NSMutableData dataWithLength:defaultLen + 1];
+    memcpy(d.mutableBytes, defaultValue, defaultLen);
+    ((char *)d.mutableBytes)[defaultLen] = '\0';
+    dict[k] = d;
+}
+
+static void OEStoreOptionDefaultCStr(NSMutableDictionary<NSString *, NSData *> *dict,
+                                     const char *key, const char *defaultValue) {
+    if (!defaultValue) return;
+    OEStoreOptionDefault(dict, key, defaultValue, strlen(defaultValue));
+}
+
+// SET_VARIABLES (V0): value is "Description; default|other|third".
+static void OEParseSetVariables(NSMutableDictionary<NSString *, NSData *> *dict,
+                                const struct retro_variable *vars) {
+    if (!vars) return;
+    for (const struct retro_variable *v = vars; v->key != NULL; v++) {
+        if (!v->value) continue;
+        const char *semi = strchr(v->value, ';');
+        if (!semi) continue;
+        const char *p = semi + 1;
+        while (*p == ' ' || *p == '\t') p++;
+        const char *end = p;
+        while (*end && *end != '|') end++;
+        if (end == p) continue;
+        OEStoreOptionDefault(dict, v->key, p, (size_t)(end - p));
+    }
+}
+
+// SET_CORE_OPTIONS (V1).
+static void OEParseCoreOptionsV1(NSMutableDictionary<NSString *, NSData *> *dict,
+                                 const struct retro_core_option_definition *defs) {
+    if (!defs) return;
+    for (const struct retro_core_option_definition *d = defs; d->key != NULL; d++) {
+        OEStoreOptionDefaultCStr(dict, d->key, d->default_value);
+    }
+}
+
+// SET_CORE_OPTIONS_V2.
+static void OEParseCoreOptionsV2(NSMutableDictionary<NSString *, NSData *> *dict,
+                                 const struct retro_core_options_v2 *opts) {
+    if (!opts || !opts->definitions) return;
+    for (const struct retro_core_option_v2_definition *d = opts->definitions; d->key != NULL; d++) {
+        OEStoreOptionDefaultCStr(dict, d->key, d->default_value);
+    }
+}
+
 #pragma mark - Libretro Callbacks (C API)
 
 static bool libretro_environment_cb(unsigned cmd, void *data) {
@@ -327,9 +398,57 @@ static bool libretro_environment_cb(unsigned cmd, void *data) {
                 return true;
             }
             break;
+        case RETRO_ENVIRONMENT_SET_VARIABLES:
+            if (_current) {
+                if (!_current.declaredOptionDefaults) {
+                    _current.declaredOptionDefaults = [NSMutableDictionary dictionary];
+                }
+                OEParseSetVariables(_current.declaredOptionDefaults,
+                                    (const struct retro_variable *)data);
+            }
+            return true;
         case RETRO_ENVIRONMENT_SET_CORE_OPTIONS:
+            if (_current) {
+                if (!_current.declaredOptionDefaults) {
+                    _current.declaredOptionDefaults = [NSMutableDictionary dictionary];
+                }
+                OEParseCoreOptionsV1(_current.declaredOptionDefaults,
+                                     (const struct retro_core_option_definition *)data);
+            }
+            return true;
         case RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2:
-            // Acknowledge core options
+            if (_current) {
+                if (!_current.declaredOptionDefaults) {
+                    _current.declaredOptionDefaults = [NSMutableDictionary dictionary];
+                }
+                OEParseCoreOptionsV2(_current.declaredOptionDefaults,
+                                     (const struct retro_core_options_v2 *)data);
+            }
+            return true;
+        case RETRO_ENVIRONMENT_SET_CORE_OPTIONS_INTL:
+            // INTL wrapper: parse the English (.us) array — keys/defaults are
+            // language-independent and OpenEmu doesn't surface translated labels.
+            if (_current && data) {
+                if (!_current.declaredOptionDefaults) {
+                    _current.declaredOptionDefaults = [NSMutableDictionary dictionary];
+                }
+                const struct retro_core_options_intl *intl =
+                    (const struct retro_core_options_intl *)data;
+                OEParseCoreOptionsV1(_current.declaredOptionDefaults, intl->us);
+            }
+            return true;
+        case RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL:
+            if (_current && data) {
+                if (!_current.declaredOptionDefaults) {
+                    _current.declaredOptionDefaults = [NSMutableDictionary dictionary];
+                }
+                const struct retro_core_options_v2_intl *intl =
+                    (const struct retro_core_options_v2_intl *)data;
+                OEParseCoreOptionsV2(_current.declaredOptionDefaults, intl->us);
+            }
+            return true;
+        case RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK:
+            // Acknowledge but don't wire — we have no options UI to refresh.
             return true;
         case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
             if (data && _current) {
@@ -632,13 +751,24 @@ static bool libretro_environment_cb(unsigned cmd, void *data) {
                     }
                 }
                 
-                // No override matched. Use an empty string rather than NULL so
-                // cores that skip the null-check before calling strcmp() don't
-                // crash. The empty string won't match any valid option value,
-                // so the core naturally falls through to its built-in default.
+                // No per-system override matched. Next layer: the default the
+                // core itself declared via SET_VARIABLES / SET_CORE_OPTIONS{,_V2}.
+                // RetroArch behaves the same way; returning the declared default
+                // is what unsticks Beetle PSX (its gpu_overclock=="" loops forever
+                // because atoi("")==0, but atoi("1") short-circuits the shift).
+                NSString *declaredKey = var->key ? [NSString stringWithUTF8String:var->key] : nil;
+                NSData *declaredDefault = declaredKey ? _current.declaredOptionDefaults[declaredKey] : nil;
+                if (declaredDefault) {
+                    var->value = (const char *)declaredDefault.bytes;
+                    return true;
+                }
+
+                // Last resort: empty string rather than NULL, so cores that
+                // skip the null-check before strcmp() don't crash. Only fires
+                // for keys the core never declared (rare; usually a core bug).
                 var->value = "";
 #if DEBUG
-                NSLog(@"[OELibretro] Core queried variable: %s (System: %s) — no override", var->key, [systemID UTF8String]);
+                NSLog(@"[OELibretro] Core queried variable: %s (System: %s) — no override and no declared default", var->key, [systemID UTF8String]);
 #endif
 #if OE_LIBRETRO_AUDIO_DEBUG
                 {
@@ -1138,6 +1268,10 @@ static void* bridge_dlsym(void *handle, const char *symbol) {
     _isArcade = [systemID containsString:@"arcade"];
     _isHW     = NO;  // Reset — core will re-request via SET_HW_RENDER if needed
 
+    // Reset declared option defaults so a re-load doesn't carry stale entries
+    // from a previous game/core into the new core's environment callbacks.
+    self.declaredOptionDefaults = [NSMutableDictionary dictionary];
+
     // Populate content directory (ROM's parent folder) for RETRO_ENVIRONMENT_GET_CONTENT_DIRECTORY.
     // The libretro spec says this should be the directory that contains the loaded content.
     {
@@ -1183,6 +1317,7 @@ static void* bridge_dlsym(void *handle, const char *symbol) {
     RESOLVE(retro_set_input_poll);
     RESOLVE(retro_set_input_state);
     RESOLVE(retro_run);
+    RESOLVE(retro_reset);
     RESOLVE(retro_load_game);
     RESOLVE(retro_unload_game);
     
@@ -1322,6 +1457,10 @@ static void* bridge_dlsym(void *handle, const char *symbol) {
     }
     
     if (_retro_run) _retro_run();
+}
+
+- (void)resetEmulation {
+    if (_retro_reset) _retro_reset();
 }
 
 - (void)startEmulation {
@@ -1809,6 +1948,42 @@ static const uint8_t OEArcadeButtonToLibretro[] = {
     [self didReleaseOEButton:button forPlayer:player];
 }
 
+// OEPSXButton enum analog entries:
+// 17 LeftAnalogUp, 18 LeftAnalogDown, 19 LeftAnalogLeft, 20 LeftAnalogRight,
+// 21 RightAnalogUp, 22 RightAnalogDown, 23 RightAnalogLeft, 24 RightAnalogRight.
+- (oneway void)didMovePSXJoystickDirection:(NSInteger)button withValue:(CGFloat)value forPlayer:(NSUInteger)player {
+    NSUInteger port = player > 0 ? player - 1 : 0;
+    int16_t scaledValue = (int16_t)(value * 0x7FFF);
+    switch (button) {
+        case 17: // LeftAnalogUp
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT axis:RETRO_DEVICE_ID_ANALOG_Y value:-scaledValue forPort:port];
+            break;
+        case 18: // LeftAnalogDown
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT axis:RETRO_DEVICE_ID_ANALOG_Y value:scaledValue forPort:port];
+            break;
+        case 19: // LeftAnalogLeft
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT axis:RETRO_DEVICE_ID_ANALOG_X value:-scaledValue forPort:port];
+            break;
+        case 20: // LeftAnalogRight
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT axis:RETRO_DEVICE_ID_ANALOG_X value:scaledValue forPort:port];
+            break;
+        case 21: // RightAnalogUp
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_Y value:-scaledValue forPort:port];
+            break;
+        case 22: // RightAnalogDown
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_Y value:scaledValue forPort:port];
+            break;
+        case 23: // RightAnalogLeft
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_X value:-scaledValue forPort:port];
+            break;
+        case 24: // RightAnalogRight
+            [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_X value:scaledValue forPort:port];
+            break;
+        default:
+            break;
+    }
+}
+
 - (oneway void)didPushColecoVisionButton:(NSInteger)button forPlayer:(NSUInteger)player {
     [self didPushOEButton:button forPlayer:player];
 }
@@ -2201,24 +2376,6 @@ static const NSUInteger OEDCButtonCount = sizeof(OEDCButtonToLibretro) / sizeof(
     }
 }
 
-- (oneway void)didMovePSXJoystickDirection:(NSInteger)button withValue:(CGFloat)value forPlayer:(NSUInteger)player {
-    // OEPSXLeftAnalog{Up=17,Down=18,Left=19,Right=20}  -> LEFT
-    // OEPSXRightAnalog{Up=21,Down=22,Left=23,Right=24} -> RIGHT
-    NSUInteger port = player > 0 ? player - 1 : 0;
-    int16_t scaled = (int16_t)(value * 0x7FFF);
-    switch (button) {
-        case 17: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT  axis:RETRO_DEVICE_ID_ANALOG_Y value:-scaled forPort:port]; break;
-        case 18: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT  axis:RETRO_DEVICE_ID_ANALOG_Y value: scaled forPort:port]; break;
-        case 19: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT  axis:RETRO_DEVICE_ID_ANALOG_X value:-scaled forPort:port]; break;
-        case 20: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_LEFT  axis:RETRO_DEVICE_ID_ANALOG_X value: scaled forPort:port]; break;
-        case 21: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_Y value:-scaled forPort:port]; break;
-        case 22: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_Y value: scaled forPort:port]; break;
-        case 23: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_X value:-scaled forPort:port]; break;
-        case 24: [self receiveLibretroAnalogIndex:RETRO_DEVICE_INDEX_ANALOG_RIGHT axis:RETRO_DEVICE_ID_ANALOG_X value: scaled forPort:port]; break;
-        default: break;
-    }
-}
-
 - (oneway void)didMoveSaturnJoystickDirection:(NSInteger)button withValue:(CGFloat)value forPlayer:(NSUInteger)player {
     // OESaturnLeftAnalog{Up=14,Down=15,Left=16,Right=17} -> LEFT stick.
     // AnalogL/AnalogR (18/19) are triggers — left as no-op pending verified mapping.
@@ -2261,5 +2418,75 @@ static const NSUInteger OEDCButtonCount = sizeof(OEDCButtonToLibretro) / sizeof(
 - (void)rightMouseUp {}
 - (void)keyDown:(unsigned short)keyCode characters:(NSString *)characters charactersIgnoringModifiers:(NSString *)charactersIgnoringModifiers flags:(NSEventModifierFlags)flags {}
 - (void)keyUp:(unsigned short)keyCode characters:(NSString *)characters charactersIgnoringModifiers:(NSString *)charactersIgnoringModifiers flags:(NSEventModifierFlags)flags {}
+
+#pragma mark - Responder safety net
+
+// Recognise the well-known OE responder selector shapes so we can swallow
+// calls to systems that this translator hasn't been wired up for yet.
+// Without this, the first input event for an unhandled system crashes the
+// helper with "unrecognized selector". Better: log once, drop the input,
+// let the user discover the limitation themselves.
+static BOOL OELibretroIsKnownResponderSelector(SEL sel) {
+    NSString *name = NSStringFromSelector(sel);
+    static NSArray<NSString *> *patterns = nil;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        patterns = @[
+            @"^didPush.+Button:forPlayer:$",
+            @"^didRelease.+Button:forPlayer:$",
+            @"^didPush.+Button:$",
+            @"^didRelease.+Button:$",
+            @"^didMove.+JoystickDirection:withValue:forPlayer:$",
+            @"^did(Move|Trigger)LightGun.+",
+            @"^didTouch.+",
+            @"^didReleaseTouch.*",
+            @"^did(Press|Release)Key:.+",
+        ];
+    });
+    for (NSString *pat in patterns) {
+        NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:pat options:0 error:NULL];
+        if ([re numberOfMatchesInString:name options:0 range:NSMakeRange(0, name.length)] > 0) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
+    NSMethodSignature *sig = [super methodSignatureForSelector:sel];
+    if (sig) return sig;
+    if (OELibretroIsKnownResponderSelector(sel)) {
+        NSUInteger argCount = 2; // self + _cmd
+        NSString *name = NSStringFromSelector(sel);
+        for (NSUInteger i = 0; i < name.length; i++) {
+            if ([name characterAtIndex:i] == ':') argCount++;
+        }
+        NSMutableString *types = [NSMutableString stringWithString:@"v@:"];
+        for (NSUInteger i = 2; i < argCount; i++) [types appendString:@"@"];
+        return [NSMethodSignature signatureWithObjCTypes:[types UTF8String]];
+    }
+    return nil;
+}
+
+- (void)forwardInvocation:(NSInvocation *)invocation {
+    SEL sel = invocation.selector;
+    if (OELibretroIsKnownResponderSelector(sel)) {
+        static os_log_t log = NULL;
+        static dispatch_once_t once;
+        dispatch_once(&once, ^{ log = os_log_create("org.openemu.libretro", "responder"); });
+        static NSMutableSet<NSString *> *logged = nil;
+        static dispatch_once_t loggedOnce;
+        dispatch_once(&loggedOnce, ^{ logged = [NSMutableSet set]; });
+        NSString *name = NSStringFromSelector(sel);
+        @synchronized (logged) {
+            if (![logged containsObject:name]) {
+                [logged addObject:name];
+                os_log_info(log, "Unhandled responder selector dropped: %{public}@", name);
+            }
+        }
+        return;
+    }
+    [super forwardInvocation:invocation];
+}
 
 @end
