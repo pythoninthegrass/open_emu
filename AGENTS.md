@@ -109,7 +109,7 @@ A clean build is the definition of "passing." Run this before every commit touch
 
 The native cores in the table above are the supported user-facing cores. In addition, users can install **RetroArch cores** through Preferences → Cores → [system] → RetroArch core. The picker scans `~/Library/Application Support/RetroArch/cores/` and wraps any compatible `.dylib` into a generated `.oecoreplugin` that the **libretro host** (`OELibretroCoreTranslator` in `OpenEmu-SDK/OpenEmuBase/`) loads at runtime. See `docs/libretro-architecture.md` for the full pathway.
 
-Any cross-cutting feature work that would otherwise touch every libretro core (RetroAchievements, save state plumbing, runahead) belongs in the libretro host, not in individual cores. There are no in-repo libretro cores; the host runtime exists solely to load externally-built RetroArch cores. The `*-Bridge/` directories that remain in the tree are testing-only and slated for removal — do not extend them.
+Any cross-cutting feature work that would otherwise touch every libretro core (RetroAchievements, save state plumbing, runahead) belongs in the libretro host, not in individual cores. There are no in-repo libretro cores; the host runtime exists solely to load externally-built RetroArch cores. (Earlier in development the tree contained `*-Bridge/` directories used to test the host against pre-compiled libretro binaries — those were removed in May 2026.) Each installed RetroArch stub is auto-refreshed on app launch from a bundled translator binary, so translator fixes reach users without reinstalling cores. Developers must bump `OELibretroBridgeVersion` whenever they change `OELibretroCoreTranslator` — see "Libretro Bridge Version Bumps" below.
 
 ---
 
@@ -240,6 +240,27 @@ Bump rules:
 - Behavioral change to the translator (input mapping, save state, audio, video, lifecycle) → bump.
 - Pure refactor with no observable change (renaming a private method, comment-only edit, formatting) → no bump needed.
 - When in doubt, bump. The cost of a needless refresh on launch is microseconds; the cost of a missed bump is users still hitting the bug.
+
+---
+
+## Core update channel
+
+Every shipped core plugin embeds a `SUFeedURL` in its `Info.plist`. Sparkle reads it from the **installed** plugin bundle, so it controls updates for users who already have the core.
+
+The canonical pattern, used by all cores nickybmon ships, is:
+
+```
+https://raw.githubusercontent.com/nickybmon/OpenEmu-Silicon/main/Appcasts/<core>.xml
+```
+
+`<core>` is the lowercased core name (e.g. `dolphin`, `mednafen`, `bluemsx`). The matching file must exist under `Appcasts/` in this repo — that is the file Sparkle fetches.
+
+Rules:
+
+- Never re-introduce `OpenEmu-Update`, `raw.github.com/OpenEmu`, or `appcast.openemu.org` URLs into a core `Info.plist`. That update channel is upstream-owned and dormant; updates published here will not reach users.
+- When adding a new core, add its appcast file to `Appcasts/<core>.xml` *and* set the `Info.plist` `SUFeedURL` to the canonical URL above in the same commit.
+- `Scripts/check-core-feed-urls.sh` enforces both rules and is wired into `Scripts/verify.sh --core` as a precondition.
+- Core appcast entries should be EdDSA-signed when newly published. `Scripts/update_core_appcast.py --sign-zip <path-to-zip>` runs Sparkle's `sign_update` against the local zip and embeds `sparkle:edSignature` on the new `<enclosure>`. The host app's existing Sparkle keypair is reused — do not generate a new one.
 
 ---
 
