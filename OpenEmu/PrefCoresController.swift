@@ -357,8 +357,15 @@ extension PrefCoresController: NSTableViewDelegate {
                 cell.textField?.stringValue = ra.displayName
                 cell.textField?.textColor = .secondaryLabelColor
             } else if let core = entry.activeCore {
-                cell.textField?.stringValue = core.name
+                let supportsRA = OECorePlugin
+                    .corePlugin(bundleIdentifier: core.bundleIdentifier)?
+                    .supportsRetroAchievements(forSystemIdentifier: entry.systemIdentifier) ?? false
+                cell.textField?.stringValue = supportsRA ? "\(core.name) 🏆" : core.name
                 cell.textField?.textColor = .labelColor
+                cell.toolTip = supportsRA
+                    ? NSLocalizedString("This core supports RetroAchievements for this system.",
+                                        comment: "Tooltip for the trophy badge in the cores preferences list")
+                    : nil
             } else {
                 cell.textField?.stringValue = NSLocalizedString("None", comment: "")
                 cell.textField?.textColor = .tertiaryLabelColor
@@ -448,7 +455,11 @@ extension PrefCoresController: NSTableViewDelegate {
 
             let activeID = entry.activeCoreID
             for core in entry.cores {
-                let item = makeItem(core.name, row: row, kind: .selectCore(bundleID: core.bundleIdentifier))
+                let supportsRA = OECorePlugin
+                    .corePlugin(bundleIdentifier: core.bundleIdentifier)?
+                    .supportsRetroAchievements(forSystemIdentifier: entry.systemIdentifier) ?? false
+                let itemTitle = supportsRA ? "\(core.name) 🏆" : core.name
+                let item = makeItem(itemTitle, row: row, kind: .selectCore(bundleID: core.bundleIdentifier))
                 item.state = core.bundleIdentifier.caseInsensitiveCompare(activeID ?? "") == .orderedSame ? .on : .off
                 menu.addItem(item)
             }
@@ -483,10 +494,18 @@ extension PrefCoresController: NSTableViewDelegate {
         if let ra = activeRA {
             titleLabel = ra.displayName
         } else if let core = active {
-            if core.isDownloading   { titleLabel = "Downloading…" }
-            else if core.canBeInstalled { titleLabel = "Install \(core.name)" }
-            else if core.hasUpdate  { titleLabel = "⬆ \(core.name)" }
-            else                    { titleLabel = core.name }
+            if core.isDownloading {
+                titleLabel = "Downloading…"
+            } else if core.canBeInstalled {
+                titleLabel = "Install \(core.name)"
+            } else if core.hasUpdate {
+                titleLabel = "⬆ \(core.name)"
+            } else {
+                let supportsRA = OECorePlugin
+                    .corePlugin(bundleIdentifier: core.bundleIdentifier)?
+                    .supportsRetroAchievements(forSystemIdentifier: entry.systemIdentifier) ?? false
+                titleLabel = supportsRA ? "\(core.name) 🏆" : core.name
+            }
         } else {
             titleLabel = NSLocalizedString("No Core", comment: "")
         }
