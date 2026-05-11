@@ -397,17 +397,25 @@ static void MupenSetAudioSpeed(int percent)
     ConfigSetParameter(config, "SharedDataPath", M64TYPE_STRING, dataURL.fileSystemRepresentation);
     ConfigSaveSection("Core");
 
-    // Disable dynarec (for debugging)
+    // NOTE: The ARM64 dynarec (NEW_DYNAREC_ARM64) is compiled in and the
+    // required JIT infrastructure is in place (MAP_JIT allocation, proper
+    // pthread_jit_write_protect_np scoping, sys_icache_invalidate — see
+    // new_dynarec.c and assem_arm64.c).  However the ARM64 JIT backend
+    // currently produces incorrect results for SM64 and likely other titles:
+    // the game boots but enters an idle spin that it never exits, producing
+    // a black screen with no audio.  This is a dynarec emulation-correctness
+    // bug (not a JIT plumbing issue) that needs a separate investigation.
+    //
+    // Until that is resolved, keep the pure interpreter on aarch64 so that
+    // games that were working continue to work.  Track as issue #NNN.
+    //
+    // On x86_64 the dynarec is known-good and is used as before.
     m64p_handle section;
-//#ifdef DEBUG
-//    int ival = EMUMODE_PURE_INTERPRETER;
-//#else
 #ifdef __aarch64__
-	int ival = EMUMODE_PURE_INTERPRETER;
+    int ival = EMUMODE_PURE_INTERPRETER;
 #else
     int ival = EMUMODE_DYNAREC;
 #endif
-//#endif
 
     ConfigOpenSection("Core", &section);
     ConfigSetParameter(section, "R4300Emulator", M64TYPE_INT, &ival);
@@ -589,6 +597,25 @@ static void MupenSetAudioSpeed(int percent)
         rc_client_destroy(_rcClient);
         _rcClient = NULL;
     }
+    // Break the render-semaphore deadlock before asking the emulation thread to stop.
+    //
+    // The Mupen emulation thread and the OpenEmu core-loop thread synchronize each
+    // rendered frame through two DispatchSemaphores in BaseOpenGLGameRenderer:
+    //
+    //   renderingThreadCanProceed  — signaled by willExecuteFrame (core-loop thread)
+    //   executeThreadCanProceed    — signaled by didRenderFrameOnAlternateThread (Mupen thread)
+    //
+    // When isFPSLimiting is non-zero the Mupen thread blocks inside the VI handler
+    // waiting for renderingThreadCanProceed, while the core-loop thread blocks in
+    // didExecuteFrame waiting for executeThreadCanProceed.  Neither can proceed, so
+    // r4300_stop is never polled and CoreDoCommand(M64CMD_STOP) never takes effect.
+    //
+    // suspendFPSLimiting() sets isFPSLimiting to 0 AND immediately signals
+    // renderingThreadCanProceed once, which unblocks the Mupen thread.  With
+    // isFPSLimiting == 0, both didExecuteFrame and didRenderFrameOnAlternateThread
+    // skip their semaphore waits from that point forward, draining any pending
+    // handshake cleanly before the stop command propagates.
+    [self.renderDelegate suspendFPSLimiting];
     CoreDoCommand(M64CMD_STOP, 0, NULL);
     [super stopEmulation];
 }
