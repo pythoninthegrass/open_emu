@@ -1185,31 +1185,41 @@ final class OEGameDocument: NSDocument {
             alert.informativeText = NSLocalizedString("Save states, rewind, frame advance, and cheats will be disabled.", comment: "")
             alert.defaultButtonTitle = NSLocalizedString("Restart Game", comment: "")
             alert.alternateButtonTitle = NSLocalizedString("Cancel", comment: "")
-            if alert.runModal() == .alertFirstButtonReturn {
-                // Flush active cheats from the core before engaging hardcore.
-                // setHardcoreEnabled(true) blocks the document's setCheat guard,
-                // but core cheat lists persist across a reset — they must be
-                // cleared first so the restarted session is clean (#447).
-                cheats.filter(\.isEnabled).forEach {
-                    gameCoreManager?.setCheat($0.code, withType: $0.type, enabled: false)
+
+            let handleResponse: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+                guard let self else { return }
+                if response == .alertFirstButtonReturn {
+                    // Flush active cheats from the core before engaging hardcore.
+                    // setHardcoreEnabled(true) blocks the document's setCheat guard,
+                    // but core cheat lists persist across a reset — they must be
+                    // cleared first so the restarted session is clean (#447).
+                    self.cheats.filter(\.isEnabled).forEach {
+                        self.gameCoreManager?.setCheat($0.code, withType: $0.type, enabled: false)
+                    }
+                    self.gameCoreManager?.setHardcoreEnabled(true)
+                    self.gameCoreManager?.resetEmulation { [weak self] in
+                        self?.isEmulationPaused = false
+                    }
+                    self.gameViewController.showHardcoreNotification(true)
+                } else {
+                    // User cancelled — revert the preference so UI and state agree.
+                    // Post the change so the prefs checkbox can resync (#446); if we
+                    // only write UserDefaults, the imperatively-set checkbox stays
+                    // visually checked until the pane is rebuilt.
+                    UserDefaults.standard.set(false, forKey: RAHardcoreEnabledKey)
+                    NotificationCenter.default.post(
+                        name: .OERAHardcoreDidChange,
+                        object: nil,
+                        userInfo: [OEHardcoreEnabledKey: false]
+                    )
+                    self.isEmulationPaused = false
                 }
-                gameCoreManager?.setHardcoreEnabled(true)
-                gameCoreManager?.resetEmulation { [weak self] in
-                    self?.isEmulationPaused = false
-                }
-                gameViewController.showHardcoreNotification(true)
+            }
+
+            if let win = gameWindowController?.window {
+                alert.beginSheetModal(for: win, completionHandler: handleResponse)
             } else {
-                // User cancelled — revert the preference so UI and state agree.
-                // Post the change so the prefs checkbox can resync (#446); if we
-                // only write UserDefaults, the imperatively-set checkbox stays
-                // visually checked until the pane is rebuilt.
-                UserDefaults.standard.set(false, forKey: RAHardcoreEnabledKey)
-                NotificationCenter.default.post(
-                    name: .OERAHardcoreDidChange,
-                    object: nil,
-                    userInfo: [OEHardcoreEnabledKey: false]
-                )
-                isEmulationPaused = false
+                handleResponse(alert.runModal())
             }
         } else if !enabled && HardcoreModePolicy.requiresResetWhenDisabling {
             // Reserved branch for future spec changes — currently unreachable.
@@ -1879,19 +1889,22 @@ final class OEGameDocument: NSDocument {
                 return
             }
             
+            // Re-fetch rom in mainThreadContext for both branches — self.rom may be from a
+            // different NSManagedObjectContext, and calling saveState(withName:) on a
+            // cross-context object crashes (#453 fixed the else branch; this closes the gap
+            // for quicksave/autosave which use the specialNamePrefix branch).
+            let context = OELibraryDatabase.default!.mainThreadContext
+            let romInContext = context.object(with: rom.objectID) as! OEDBRom
+
             var saveState: OEDBSaveState?
             if stateName.hasPrefix(OEDBSaveState.specialNamePrefix),
-               let state = rom.saveState(withName: stateName) {
+               let state = romInContext.saveState(withName: stateName) {
                 state.coreIdentifier = core.bundleIdentifier
                 state.coreVersion = core.version
                 state.replaceStateFileWithFile(at: temporaryStateFileURL)
                 state.timestamp = Date()
                 saveState = state
             } else {
-                let context = OELibraryDatabase.default!.mainThreadContext
-                // Re-fetch rom in the target context to avoid a cross-context relationship crash.
-                // self.rom may have been fetched in a different NSManagedObjectContext.
-                let romInContext = context.object(with: rom.objectID) as! OEDBRom
                 saveState = OEDBSaveState.createSaveState(named: stateName, for: romInContext, core: core, withFile: temporaryStateFileURL, in: context)
             }
             
