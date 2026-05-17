@@ -65,6 +65,7 @@ NSString *const OEGameCoreErrorDomain = @"org.openemu.GameCore.ErrorDomain";
     BOOL                    singleFrameStep;
     BOOL                    isRewinding;
     BOOL                    isPausedExecution;
+    BOOL                    _hardcoreEnabled;
 
     NSTimeInterval          lastRate;
 
@@ -76,6 +77,24 @@ NSString *const OEGameCoreErrorDomain = @"org.openemu.GameCore.ErrorDomain";
 @synthesize nextFrameTime;
 
 static Class GameCoreClass = Nil;
+
+- (BOOL)hardcoreEnabled
+{
+    return _hardcoreEnabled;
+}
+
+- (void)setHardcoreEnabled:(BOOL)hardcoreEnabled
+{
+    _hardcoreEnabled = hardcoreEnabled;
+    if (hardcoreEnabled) {
+        isRewinding = NO;
+        singleFrameStep = NO;
+        lastRate = 1.0;
+        if (_rate != 0) {
+            self.rate = 1.0;
+        }
+    }
+}
 
 + (void)initialize
 {
