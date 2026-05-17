@@ -50,6 +50,9 @@ final class GameViewController: NSViewController {
     private var notificationView: OEGameLayerNotificationView!
     private var achievementBannerView: OEAchievementBannerView!
     private var retroAchievementsPlacardView: OERetroAchievementsPlacardView!
+    private var retroAchievementsEventToastView: OERetroAchievementsEventToastView!
+    private var retroAchievementsIndicatorStackView: OERetroAchievementsIndicatorStackView!
+    private var retroAchievementsNoticeView: OERetroAchievementsNoticeView!
 
     // Save Sync status badge
     private var syncStatusOverlay: OESyncStatusOverlayView!
@@ -118,6 +121,18 @@ final class GameViewController: NSViewController {
         retroAchievementsPlacardView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(retroAchievementsPlacardView)
 
+        retroAchievementsEventToastView = OERetroAchievementsEventToastView(frame: .zero)
+        retroAchievementsEventToastView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(retroAchievementsEventToastView)
+
+        retroAchievementsIndicatorStackView = OERetroAchievementsIndicatorStackView(frame: .zero)
+        retroAchievementsIndicatorStackView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(retroAchievementsIndicatorStackView)
+
+        retroAchievementsNoticeView = OERetroAchievementsNoticeView(frame: .zero)
+        retroAchievementsNoticeView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(retroAchievementsNoticeView)
+
         NSLayoutConstraint.activate([
             achievementBannerView.widthAnchor.constraint(equalToConstant: OEAchievementBannerView.bannerWidth),
             achievementBannerView.heightAnchor.constraint(equalToConstant: OEAchievementBannerView.bannerHeight),
@@ -127,6 +142,17 @@ final class GameViewController: NSViewController {
             retroAchievementsPlacardView.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.82),
             retroAchievementsPlacardView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             retroAchievementsPlacardView.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+
+            retroAchievementsEventToastView.widthAnchor.constraint(equalToConstant: 390),
+            retroAchievementsEventToastView.heightAnchor.constraint(equalToConstant: 62),
+            retroAchievementsEventToastView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            retroAchievementsEventToastView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -24),
+
+            retroAchievementsIndicatorStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            retroAchievementsIndicatorStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+
+            retroAchievementsNoticeView.leadingAnchor.constraint(equalTo: notificationView.trailingAnchor, constant: 10),
+            retroAchievementsNoticeView.centerYAnchor.constraint(equalTo: notificationView.centerYAnchor),
         ])
 
         syncStatusToken = NotificationCenter.default.addObserver(forName: .OESaveSyncStatusDidChange, object: nil, queue: .main) { [weak self] notification in
@@ -358,8 +384,53 @@ extension GameViewController {
         notificationView.showStepBackward()
     }
 
-    func showAchievementUnlocked(title: String, points: UInt32) {
-        achievementBannerView.show(title: title, points: points)
+    func showAchievementUnlocked(title: String, description: String, badgeURL: String, points: UInt32) {
+        achievementBannerView.show(title: title, description: description, badgeURL: badgeURL, points: points)
+    }
+
+    func showRetroAchievementsEventToast(title: String, subtitle: String, badgeURL: String? = nil, symbolName: String = "trophy.fill") {
+        retroAchievementsEventToastView.show(title: title, subtitle: subtitle, badgeURL: badgeURL, symbolName: symbolName)
+    }
+
+    func showRetroAchievementsChallenge(id: UInt32, title: String) {
+        retroAchievementsIndicatorStackView.showChallenge(id: id, title: title)
+    }
+
+    func hideRetroAchievementsChallenge(id: UInt32) {
+        retroAchievementsIndicatorStackView.hideChallenge(id: id)
+    }
+
+    func showRetroAchievementsLeaderboard(id: UInt32, display: String) {
+        retroAchievementsIndicatorStackView.showLeaderboard(id: id, display: display)
+    }
+
+    func updateRetroAchievementsLeaderboard(id: UInt32, display: String) {
+        retroAchievementsIndicatorStackView.updateLeaderboard(id: id, display: display)
+    }
+
+    func hideRetroAchievementsLeaderboard(id: UInt32) {
+        retroAchievementsIndicatorStackView.hideLeaderboard(id: id)
+    }
+
+    func hideAllRetroAchievementsLeaderboards() {
+        retroAchievementsIndicatorStackView.hideAllLeaderboards()
+    }
+
+    func showRetroAchievementsProgress(title: String, progress: String) {
+        retroAchievementsIndicatorStackView.showProgress(title: title, progress: progress)
+    }
+
+    func hideRetroAchievementsProgress() {
+        retroAchievementsIndicatorStackView.hideProgress()
+    }
+
+    func showRetroAchievementsUnknownEmulatorNotice() {
+        retroAchievementsNoticeView.showUnknownEmulatorWarning()
+    }
+
+    func clearRetroAchievementsIndicators() {
+        retroAchievementsIndicatorStackView.clear()
+        retroAchievementsNoticeView.clear()
     }
 
     func showRetroAchievementsPlacard(info: [String: Any], hardcore: Bool, signedIn: Bool) {
@@ -445,7 +516,7 @@ private final class OERetroAchievementsPlacardView: NSVisualEffectView {
         let points = (info[OERetroAchievementsUnlockedPointsKey] as? NSNumber)?.intValue ?? 0
         let totalPoints = (info[OERetroAchievementsTotalPointsKey] as? NSNumber)?.intValue ?? 0
         let account = signedIn ? NSLocalizedString("Logged in", comment: "RetroAchievements placard signed in") : NSLocalizedString("Not logged in", comment: "RetroAchievements placard signed out")
-        summaryLabel.stringValue = String(format: NSLocalizedString("%@ · Recognized · %d of %d achievements · %d of %d points", comment: "RetroAchievements boot placard summary"), account, unlocked, total, points, totalPoints)
+        summaryLabel.stringValue = String(format: NSLocalizedString("%@ · %d of %d achievements · %d of %d points", comment: "RetroAchievements boot placard summary"), account, unlocked, total, points, totalPoints)
 
         modeLabel.stringValue = hardcore ? NSLocalizedString("Hardcore Mode", comment: "RetroAchievements hardcore mode") : NSLocalizedString("Softcore Mode", comment: "RetroAchievements softcore mode")
         modeLabel.textColor = .labelColor
