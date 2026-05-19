@@ -686,11 +686,19 @@ final class OELibraryDatabase: NSObject {
                     gameInfo.removeValue(forKey: "boxImageURL")
                     
                     let game = OEDBGame.object(with: objectID, in: context)
-                    game?.setValuesForKeys(gameInfo)
+                    if let game = game {
+                        let allowedAttributeKeys = Set(game.entity.attributesByName.keys)
+                        let droppedKeys = Set(gameInfo.keys).subtracting(allowedAttributeKeys)
+                        if !droppedKeys.isEmpty {
+                            DLog("Ignoring unsupported OpenVGDB sync keys for Game: \(droppedKeys.sorted().joined(separator: ", "))")
+                        }
+                        let safeGameInfo = gameInfo.filter { allowedAttributeKeys.contains($0.key) }
+                        game.setValuesForKeys(safeGameInfo)
+                    }
                     
                     if let imageDictionary = imageDictionary,
                        let game = game {
-                        let image = OEDBImage.createImage(with: imageDictionary)
+                        let image = OEDBImage.createImage(with: imageDictionary, in: context)
                         if let previousImage = game.boxImage {
                             previousBoxImages.append(previousImage.permanentID)
                         }
