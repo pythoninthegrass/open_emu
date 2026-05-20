@@ -89,7 +89,7 @@ security find-identity -v | grep -q "Developer ID Application" \
 echo "OK: Developer ID certificate"
 
 # Warn if working tree is dirty (non-appcast files)
-DIRTY=$(git -C "$REPO_ROOT" status --porcelain | grep -v "appcast.xml" | grep -v "Releases/" | grep -v "Dolphin/" || true)
+DIRTY=$(git -C "$REPO_ROOT" status --porcelain | grep -v "appcast.xml" | grep -v "Releases/" | grep -v "Dolphin/" | grep -v "OpenEmu-Info.plist" | grep -v "project.pbxproj" | grep -v "SECURITY.md" || true)
 if [ -n "$DIRTY" ]; then
   echo ""
   echo "WARNING: Working tree has uncommitted changes:"

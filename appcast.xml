@@ -5,7 +5,31 @@
     <link>https://github.com/nickybmon/OpenEmu-Silicon/releases</link>
     <description>Most recent changes with links to updates.</description>
     <language>en</language>
-                                        <item>
+                                            <item>
+      <title>OpenEmu-Silicon 1.2.1</title>
+      <description>
+        <![CDATA[
+        <h2>OpenEmu-Silicon 1.2.1</h2>
+        <h3>What's New in 1.2.1</h3>
+        <h3>Bug Fixes</h3>
+        <ul>
+        <li>Fixed a crash loop where OpenEmu would crash immediately on relaunch after a previous crash, making the app impossible to open</li>
+        <li>Fixed a crash during cover art download that affected games being imported for the first time</li>
+        <li>Fixed a crash that could occur when quitting the app while a game was open</li>
+        </ul>
+        ]]>
+      </description>
+      <pubDate>Wed, 20 May 2026 00:11:19 +0000</pubDate>
+      <sparkle:minimumSystemVersion>11.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/nickybmon/OpenEmu-Silicon/releases/download/v1.2.1/OpenEmu-Silicon.dmg"
+        sparkle:version="17"
+        sparkle:shortVersionString="1.2.1"
+        sparkle:edSignature="prSU+X8vvtsMk0+Y0KPqdwH6IuY78GE2iwBcDHf4iF/WvR0M5QWheY//pPj+hCylKtt9KHQkhzsboFcaiXqZBw=="
+        length="49483344"
+        type="application/octet-stream"/>
+    </item>
+<item>
       <title>OpenEmu-Silicon 1.2.0</title>
       <description>
         <![CDATA[
