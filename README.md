@@ -50,39 +50,6 @@ brew install --cask openemu-silicon
 
 ---
 
-## What's New in v1.1.0
-
-### Libretro Bridge — run RetroArch cores inside OpenEmu *(Experimental)*
-
-OpenEmu Silicon now ships a **Libretro Bridge** (built with [pystIC](https://github.com/pystIC)) — a translation layer that lets you load RetroArch / libretro cores directly, without per-core ports. Working in 1.1.0: PSP via PPSSPP-libretro, Atari 2600, and Commodore 64 via VICE. Hardware-rendered cores (Dolphin, melonDS) and Dreamcast via Flycast-libretro are not yet supported — use the native Flycast core for Dreamcast.
-
-→ [Setup guide and supported cores list](https://github.com/nickybmon/OpenEmu-Silicon/wiki/Using-RetroArch-Cores)
-
-### RetroAchievements — Phase 2
-
-Two more system families earn achievements: **Nintendo 64** (Mupen64Plus) and **PlayStation, PC Engine, Lynx, and Neo Geo Pocket** (Mednafen). Log in once in Preferences → Achievements. Full supported list: GBA, GB/GBC, SNES, NES, Genesis/Mega Drive/CD, Master System/Game Gear, N64, PSX, PC Engine, Lynx, NGP.
-
-### Core update pipeline fixed
-
-If you've seen "Update Available" loop without anything changing, or cores felt stuck on old versions — 1.1.0 fixes that. The update feed was pointing at stale upstream sources instead of this fork's own. Existing installations migrate automatically on first launch.
-
-### Other improvements
-
-- **Cheats persist** — User-added cheat codes are saved and re-applied automatically on game load.
-- **ScreenScraper maps 16 more systems** — Covers and metadata now fetch for systems that were previously missing.
-- **Window resize artifacts fixed** — Maximising or resizing no longer leaves ghost content layers.
-- **Dreamcast fixes** — JIT re-enabled (fixes 27fps / half-speed issue); black screen on second launch fixed; PSX multi-disc games no longer require a manual `.m3u` file.
-- **Input Monitoring detection fixed** — If permission was already granted before launch, the prompt no longer re-appears and controllers respond immediately.
-
-**Earlier highlights:**
-- **RetroAchievements Phase 1** — NES, SNES, GB/GBC, GBA, Genesis family.
-- **Nintendo 64** — Mupen64Plus revived and working.
-- **Sega Dreamcast** — Migrated from Reicast to Flycast.
-- **GameCube / Wii** — Dolphin core integrated.
-- **ScreenScraper cover art** — Automatic box art via [ScreenScraper](https://www.screenscraper.fr).
-
----
-
 ## Supported Systems
 
 > **Full details — working status, known issues, in-progress cores, and what's planned — are on the [Supported Systems](https://github.com/nickybmon/OpenEmu-Silicon/wiki/Supported-Systems) wiki page.**
