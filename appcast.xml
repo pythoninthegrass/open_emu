@@ -5,7 +5,36 @@
     <link>https://github.com/nickybmon/OpenEmu-Silicon/releases</link>
     <description>Most recent changes with links to updates.</description>
     <language>en</language>
-                                            <item>
+                                                <item>
+      <title>OpenEmu-Silicon 1.2.2</title>
+      <description>
+        <![CDATA[
+        <h2>OpenEmu-Silicon 1.2.2</h2>
+        <h3>What's New in 1.2.2</h3>
+        <ul>
+        <li>Sonic & Knuckles lock-on now works on Genesis — launch Sonic 1, 2, or 3 through Sonic & Knuckles for the combined cartridge experience</li>
+        </ul>
+        <h3>Bug Fixes</h3>
+        <ul>
+        <li>Fixed three crashes reported by users in production (import failure, session teardown, and a Core Data threading issue)</li>
+        <li>The game window title now shows which core is running the current game</li>
+        <li>Loading a save state from a different region or revision now prompts you to confirm instead of silently failing</li>
+        <li>Dreamcast GDI disc images with unusual track layouts now import correctly</li>
+        <li>Improved 3DO accuracy: MADAM matrix math now uses integer arithmetic, matching real hardware behavior</li>
+        </ul>
+        ]]>
+      </description>
+      <pubDate>Thu, 21 May 2026 02:16:00 +0000</pubDate>
+      <sparkle:minimumSystemVersion>11.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/nickybmon/OpenEmu-Silicon/releases/download/v1.2.2/OpenEmu-Silicon.dmg"
+        sparkle:version="18"
+        sparkle:shortVersionString="1.2.2"
+        sparkle:edSignature="RepA5SbIm7cunKISVp28m2KxQFsndgenYlNmYacSdBS6CbLVwGZ9V0AIcVgWq/MmM3EaY1okUPYk0netTGi0AQ=="
+        length="49495442"
+        type="application/octet-stream"/>
+    </item>
+<item>
       <title>OpenEmu-Silicon 1.2.1</title>
       <description>
         <![CDATA[
